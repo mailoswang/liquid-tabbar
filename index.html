@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>liquid-tabbar</title>
+<link rel="stylesheet" href="liquid-tabbar.css">
+<style>
+ :root{--bg:#101012;--ink:#f4f4f5;--sub:#a1a1aa;--card:#1c1c20;--line:rgba(255,255,255,.1)}
+ :root[data-theme="light"]{--bg:#f3f3f3;--ink:#141414;--sub:#6d6d6d;--card:#fff;--line:rgba(0,0,0,.1)}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;padding:24px 16px 140px}
+ main{max-width:640px;margin:0 auto}
+ h1{font-size:1.6rem;margin:0 0 4px}
+ p{color:var(--sub);margin:0 0 20px}
+ .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:20px;display:grid;gap:14px}
+ .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+ .row b{min-width:72px;font-weight:600}
+ button.opt{font:inherit;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:4px 14px;cursor:pointer}
+ button.opt.on{background:var(--ink);color:var(--bg)}
+ input[type=color]{width:40px;height:28px;border:0;background:none;padding:0}
+ #log{font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--sub);min-height:3em;white-space:pre-wrap}
+ /* 背景色塊：看玻璃效果用 */
+ .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+ .tiles div{aspect-ratio:2/3;border-radius:12px}
+</style>
+</head>
+<body>
+<main>
+ <h1>liquid-tabbar</h1>
+ <p>液態玻璃風格的底部分頁列。按一下切換，按住可以左右拖動，膠囊蓋到的圖示會變色，鬆手才切換。</p>
+
+ <div class="panel">
+  <div class="row"><b>數量</b><span id="count"></span></div>
+  <div class="row"><b>外觀</b><span id="theme"></span></div>
+  <div class="row"><b>文字</b><span id="labels"></span></div>
+  <div class="row"><b>強調色</b><input type="color" id="accent" value="#ff3d47"></div>
+  <div id="log">（在下方分頁列上點按或拖動）</div>
+ </div>
+
+ <div class="tiles" id="tiles"></div>
+</main>
+
+<nav id="bar"></nav>
+
+<script src="liquid-tabbar.js"></script>
+<script>
+ // 圖示：24×24 viewBox 內的路徑（也可以直接給完整的 <svg>）
+ const ICONS = {
+  home: '<path d="M10.7 3.4a2 2 0 0 1 2.6 0l7.1 6.1c.4.4.6.9.6 1.4V19a2 2 0 0 1-2 2h-3.6a.9.9 0 0 1-.9-.9v-4.4a1.6 1.6 0 0 0-1.6-1.6h-1.8a1.6 1.6 0 0 0-1.6 1.6v4.4a.9.9 0 0 1-.9.9H5a2 2 0 0 1-2-2v-8.1c0-.5.2-1 .6-1.4z"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="m15 15 5.5 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+  heart: '<path d="M12 20.5s-8-4.6-8-10.4A4.6 4.6 0 0 1 12 7.3a4.6 4.6 0 0 1 8 2.8c0 5.8-8 10.4-8 10.4z"/>',
+  bell: '<path d="M12 3a6 6 0 0 0-6 6v3.6L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6z"/><path d="M9.5 19.5a2.5 2.5 0 0 0 5 0z"/>',
+  user: '<circle cx="12" cy="8" r="4.2"/><path d="M3.8 20.2c.8-4 4.2-6.4 8.2-6.4s7.4 2.4 8.2 6.4a.9.9 0 0 1-.9 1H4.7a.9.9 0 0 1-.9-1z"/>'
+ };
+ const ALL = [
+  { id: "home", label: "首頁", icon: ICONS.home },
+  { id: "search", label: "搜尋", icon: ICONS.search },
+  { id: "likes", label: "收藏", icon: ICONS.heart },
+  { id: "inbox", label: "通知", icon: ICONS.bell },
+  { id: "me", label: "我的", icon: ICONS.user }
+ ];
+ const state = { n: 4, labels: true, active: "home" };
+ const log = t => { document.getElementById("log").textContent = t; };
+
+ const bar = new LiquidTabbar("#bar", {
+  onSelect: (item, i, info) => { state.active = item.id; log(`onSelect   ${item.id}（第 ${i} 格，${info.source}）`); },
+  onReselect: (item, i, info) => log(`onReselect ${item.id}（第 ${i} 格，${info.source}）`)
+ });
+ const render = () => {
+  const items = ALL.slice(0, state.n).map(a => state.labels ? a : { ...a, label: "" });
+  if (!items.some(a => a.id === state.active)) state.active = items[0].id;
+  bar.set({ items, active: state.active });
+ };
+
+ // 控制項
+ const opts = (host, list, get, set) => {
+  const el = document.getElementById(host);
+  const paint = () => el.querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", list[i][1] === get()));
+  list.forEach(([text, v]) => {
+   const b = document.createElement("button");
+   b.className = "opt"; b.textContent = text;
+   b.onclick = () => { set(v); paint(); render(); };
+   el.appendChild(b);
+  });
+  paint();
+ };
+ opts("count", [["3", 3], ["4", 4], ["5", 5]], () => state.n, v => state.n = v);
+ opts("labels", [["顯示", true], ["只有圖示", false]], () => state.labels, v => state.labels = v);
+ opts("theme", [["深色", "dark"], ["淺色", "light"]], () => document.documentElement.dataset.theme || "dark", v => {
+  document.documentElement.dataset.theme = v;
+  bar.el.classList.toggle("ltb--light", v === "light");
+ });
+ document.getElementById("accent").oninput = e => bar.el.style.setProperty("--ltb-accent", e.target.value);
+
+ // 背景色塊
+ const tiles = document.getElementById("tiles");
+ for (let i = 0; i < 18; i++) {
+  const d = document.createElement("div"), h = (i * 47) % 360;
+  d.style.background = `linear-gradient(160deg,hsl(${h} 80% 60%),hsl(${(h + 40) % 360} 70% 35%))`;
+  tiles.appendChild(d);
+ }
+ render();
+</script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+/*! liquid-tabbar v1.0.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+
+/* ==========================================================================
+   1. 可調整的變數（在自己的專案裡覆寫 .ltb 上的這些變數即可）
+   預設是深色外觀；淺色加上 .ltb--light，跟隨系統加上 .ltb--auto
+   ========================================================================== */
+.ltb {
+  /* 顏色 */
+  --ltb-ink: #fff;                       /* 圖示與文字 */
+  --ltb-accent: #ff3d47;                 /* 膠囊蓋到的圖示顏色 */
+  --ltb-focus: var(--ltb-accent);        /* 鍵盤聚焦外框 */
+  --ltb-ind: rgba(0, 0, 0, .55);         /* 平常的膠囊底色 */
+  --ltb-lift-bg: rgba(255, 255, 255, .12);   /* 按住時浮起的玻璃膠囊 */
+  --ltb-lift-ring: rgba(255, 255, 255, .32);
+  --ltb-lift-edge: rgba(0, 0, 0, .45);
+  --ltb-lift-shadow: rgba(0, 0, 0, .4);
+
+  /* 玻璃底板：由上往下白→灰的染色、越靠邊越亮的邊緣光、柔和投影、一圈亮邊 */
+  --ltb-bg: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .03) 45%, rgba(179, 179, 179, .07)), rgba(86, 86, 90, .55);
+  --ltb-blur: blur(2px) saturate(1.5);
+  --ltb-rim: inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 0 4px rgba(255, 255, 255, .12), inset 0 0 14px rgba(255, 255, 255, .06);
+  --ltb-shadow: 0 12px 30px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .3);
+  --ltb-ring: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, .16) 35%, rgba(255, 255, 255, .12) 65%, rgba(255, 255, 255, .26));
+
+  /* 尺寸與位置（預設貼齊 iOS 原生分頁列的位置） */
+  --ltb-width: min(calc(100% - 42px), 380px);
+  --ltb-height: 62px;
+  --ltb-pad-x: 10px;
+  --ltb-pad-y: 4px;
+  --ltb-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 13px));
+  --ltb-z: 30;
+  --ltb-icon: 28px;
+  --ltb-gap: 4px;
+  --ltb-font-size: 11px;
+  --ltb-font-weight: 600;
+
+  /* 膠囊 */
+  --ltb-pill-pad: 12px;      /* 膠囊比一格寬多少 */
+  --ltb-lift-w: 18px;        /* 按住時變寬多少 */
+  --ltb-lift-h: 17px;        /* 按住時變高多少 */
+  --ltb-lift-scale: 1.04;    /* 按住時整條放大 */
+  --ltb-ease: cubic-bezier(.2, .8, .25, 1);
+  --ltb-release: .28s;       /* 放開後收回 */
+  --ltb-press: .22s;         /* 按下浮起 */
+}
+
+.ltb.ltb--light {
+  --ltb-ink: #141414;
+  --ltb-accent: #e50914;
+  --ltb-ind: rgba(0, 0, 0, .07);
+  --ltb-lift-bg: rgba(255, 255, 255, .55);
+  --ltb-lift-ring: rgba(255, 255, 255, .7);
+  --ltb-lift-edge: rgba(0, 0, 0, .14);
+  --ltb-lift-shadow: rgba(0, 0, 0, .18);
+  --ltb-bg: linear-gradient(180deg, rgba(255, 255, 255, .4), rgba(255, 255, 255, .1) 45%, rgba(179, 179, 179, .16)), rgba(255, 255, 255, .42);
+  --ltb-rim: inset 0 0 0 1px rgba(255, 255, 255, .55), inset 0 0 4px rgba(255, 255, 255, .45), inset 0 0 14px rgba(255, 255, 255, .2);
+  --ltb-shadow: 0 10px 28px rgba(0, 0, 0, .12), 0 2px 6px rgba(0, 0, 0, .06);
+}
+
+@media (prefers-color-scheme: light) {
+  .ltb.ltb--auto {
+    --ltb-ink: #141414;
+    --ltb-accent: #e50914;
+    --ltb-ind: rgba(0, 0, 0, .07);
+    --ltb-lift-bg: rgba(255, 255, 255, .55);
+    --ltb-lift-ring: rgba(255, 255, 255, .7);
+    --ltb-lift-edge: rgba(0, 0, 0, .14);
+    --ltb-lift-shadow: rgba(0, 0, 0, .18);
+    --ltb-bg: linear-gradient(180deg, rgba(255, 255, 255, .4), rgba(255, 255, 255, .1) 45%, rgba(179, 179, 179, .16)), rgba(255, 255, 255, .42);
+    --ltb-rim: inset 0 0 0 1px rgba(255, 255, 255, .55), inset 0 0 4px rgba(255, 255, 255, .45), inset 0 0 14px rgba(255, 255, 255, .2);
+    --ltb-shadow: 0 10px 28px rgba(0, 0, 0, .12), 0 2px 6px rgba(0, 0, 0, .06);
+  }
+}
+
+/* ==========================================================================
+   2. 底板
+   ========================================================================== */
+@property --ltb-g { syntax: "<number>"; inherits: true; initial-value: 0 }
+
+.ltb, .ltb * { box-sizing: border-box }
+
+.ltb {
+  position: fixed; left: 50%; translate: -50% 0; bottom: var(--ltb-bottom); z-index: var(--ltb-z);
+  width: var(--ltb-width); height: var(--ltb-height); padding: var(--ltb-pad-y) var(--ltb-pad-x);
+  display: grid; grid-template-columns: repeat(var(--ltb-n, 4), 1fr); isolation: isolate;
+  border: 0; border-radius: 999px;
+  background: var(--ltb-bg);
+  -webkit-backdrop-filter: var(--ltb-blur); backdrop-filter: var(--ltb-blur);
+  box-shadow: var(--ltb-rim), var(--ltb-shadow);
+  touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  transition: scale var(--ltb-release) var(--ltb-ease), --ltb-g var(--ltb-release) var(--ltb-ease);
+  will-change: scale;
+
+  /* 膠囊幾何。JS 每幀只寫 --ltb-x（位置）、--ltb-cmp（寬度變化）、--ltb-sx/--ltb-sy（伸縮），
+     --ltb-sw（一格寬）與 --ltb-dw（整條寬）在尺寸改變時更新；--ltb-g 是浮起程度（CSS 過渡）。
+     膠囊、變色複本、圖示遮罩都讀這組值，每一幀都對齊 */
+  --ltb-pw0: calc(var(--ltb-sw, 0px) + var(--ltb-pill-pad) + var(--ltb-g) * var(--ltb-lift-w));
+  --ltb-ph0: calc(var(--ltb-height) - 2 * var(--ltb-pad-y) + var(--ltb-g) * var(--ltb-lift-h));
+  --ltb-pw: calc(var(--ltb-pw0) * var(--ltb-sx, 1) - var(--ltb-cmp, 0px));
+  --ltb-ph: calc(var(--ltb-ph0) * var(--ltb-sy, 1));
+  /* 最左可到的位置；變形時左右夾在最左／最右那格之內，不會超出底板或螢幕 */
+  --ltb-plo: calc(var(--ltb-pad-x) - var(--ltb-pill-pad) / 2 - var(--ltb-g) * var(--ltb-lift-w) / 2);
+  --ltb-pl: clamp(var(--ltb-plo), calc(var(--ltb-plo) + var(--ltb-x, 0px) + (var(--ltb-pw0) - var(--ltb-pw)) / 2), calc(var(--ltb-dw, 0px) - var(--ltb-plo) - var(--ltb-pw)));
+  --ltb-pt: calc(var(--ltb-height) / 2 - var(--ltb-ph) / 2);
+}
+
+/* 一整圈亮邊（上緣最亮、下緣次之），黑底上也看得出輪廓 */
+.ltb::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  padding: 1px; background: var(--ltb-ring);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+}
+
+/* 按住：整條微微放大，膠囊浮起成略超出底板、邊緣有高光的透明玻璃 */
+.ltb.ltb-lift {
+  scale: var(--ltb-lift-scale); --ltb-g: 1;
+  transition: scale var(--ltb-press) var(--ltb-ease), --ltb-g var(--ltb-press) var(--ltb-ease);
+}
+
+/* ==========================================================================
+   3. 膠囊
+   平常與浮起兩種狀態用同樣 7 層陰影（不用的層設透明）、底色只換顏色、光澤另一層淡入淡出，
+   瀏覽器才能平順過渡，不會閃一下
+   ========================================================================== */
+.ltb-ind, .ltb-clip {
+  position: absolute; left: var(--ltb-pl); top: var(--ltb-pt); width: var(--ltb-pw); height: var(--ltb-ph);
+  border-radius: 999px; transition: opacity .2s;
+}
+.ltb-ind {
+  z-index: -1; background-color: var(--ltb-ind);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), inset 1.5px 2px 0 -.5px rgba(255, 255, 255, 0), inset -1px -1.5px 0 -.5px rgba(255, 255, 255, 0),
+    inset 0 0 14px rgba(255, 255, 255, 0), 0 0 0 .5px rgba(0, 0, 0, 0), 0 1px 3px rgba(0, 0, 0, .08), 0 2px 6px rgba(0, 0, 0, 0);
+  transition: opacity .2s, background-color .3s var(--ltb-ease), box-shadow .3s var(--ltb-ease);
+}
+.ltb-ind::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .04) 55%, rgba(255, 255, 255, .1));
+  transition: opacity .3s var(--ltb-ease);
+}
+.ltb-lift .ltb-ind {
+  background-color: var(--ltb-lift-bg);
+  box-shadow: inset 0 0 0 1px var(--ltb-lift-ring), inset 1.5px 2px 0 -.5px rgba(255, 255, 255, .9), inset -1px -1.5px 0 -.5px rgba(255, 255, 255, .4),
+    inset 0 0 14px rgba(255, 255, 255, .14), 0 0 0 .5px var(--ltb-lift-edge), 0 8px 22px var(--ltb-lift-shadow), 0 2px 6px rgba(0, 0, 0, .18);
+  transition: opacity .2s, background-color .18s, box-shadow .18s;
+}
+.ltb-lift .ltb-ind::after { opacity: 1; transition-duration: .18s }
+.ltb-noind .ltb-ind, .ltb-noind .ltb-clip { opacity: 0 }
+
+/* ==========================================================================
+   4. 按鈕與「膠囊蓋到哪裡就變色」
+   變色複本裁在膠囊裡；同一段的原色圖示用遮罩挖掉膠囊形狀（中間長方形＋兩端半圓），
+   座標都換算到各按鈕自己的位置，圓弧完全吻合
+   ========================================================================== */
+.ltb-item {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ltb-gap);
+  min-width: 0; border: 0; padding: 0; background: transparent; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: var(--ltb-font-size); font-weight: var(--ltb-font-weight); color: var(--ltb-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.ltb-item:focus-visible { outline: 2px solid var(--ltb-focus); outline-offset: 4px }
+.ltb-ic { width: var(--ltb-icon); height: var(--ltb-icon); flex: none }
+.ltb-item span, .ltb-copy i { font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100% }
+
+.ltb:not(.ltb-noind) .ltb-item {
+  --ltb-a0: calc(var(--ltb-pl) - var(--ltb-pad-x) - var(--ltb-j, 0) * var(--ltb-sw, 0px));
+  --ltb-mt: calc(var(--ltb-pt) - var(--ltb-pad-y));
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0), radial-gradient(closest-side, #000 96%, transparent), radial-gradient(closest-side, #000 96%, transparent);
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0), radial-gradient(closest-side, #000 96%, transparent), radial-gradient(closest-side, #000 96%, transparent);
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%, calc(var(--ltb-pw) - var(--ltb-ph)) var(--ltb-ph), var(--ltb-ph) var(--ltb-ph), var(--ltb-ph) var(--ltb-ph);
+  mask-size: 100% 100%, calc(var(--ltb-pw) - var(--ltb-ph)) var(--ltb-ph), var(--ltb-ph) var(--ltb-ph), var(--ltb-ph) var(--ltb-ph);
+  -webkit-mask-position: 0 0, calc(var(--ltb-a0) + var(--ltb-ph) / 2) var(--ltb-mt), var(--ltb-a0) var(--ltb-mt), calc(var(--ltb-a0) + var(--ltb-pw) - var(--ltb-ph)) var(--ltb-mt);
+  mask-position: 0 0, calc(var(--ltb-a0) + var(--ltb-ph) / 2) var(--ltb-mt), var(--ltb-a0) var(--ltb-mt), calc(var(--ltb-a0) + var(--ltb-pw) - var(--ltb-ph)) var(--ltb-mt);
+  -webkit-mask-composite: source-out, source-over, source-over;
+  mask-composite: subtract, add, add;
+}
+
+.ltb-clip { z-index: 2; overflow: hidden; pointer-events: none }
+.ltb-copy {
+  position: absolute; left: calc(-1 * var(--ltb-pl)); top: calc(-1 * var(--ltb-pt));
+  width: var(--ltb-dw, 0px); height: var(--ltb-height); padding: var(--ltb-pad-y) var(--ltb-pad-x);
+  display: grid; grid-template-columns: repeat(var(--ltb-n, 4), 1fr);
+}
+.ltb-copy > b {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ltb-gap); min-width: 0;
+  font-size: var(--ltb-font-size); font-weight: var(--ltb-font-weight); color: var(--ltb-accent);
+}
+
+/* ==========================================================================
+   5. 無障礙
+   ========================================================================== */
+@media (prefers-reduced-transparency: reduce) {
+  .ltb { -webkit-backdrop-filter: none; backdrop-filter: none }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ltb, .ltb-ind { transition: none }
+}
