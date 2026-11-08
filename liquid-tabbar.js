@@ -1,4 +1,4 @@
-/*! liquid-tabbar v1.0.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v1.0.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.LiquidTabbar = factory();
@@ -309,10 +309,20 @@
           if (this.index >= 0) pill.to(this.index * this.sw, { instant: true });
         })
       ];
+      // 分頁列自己的尺寸改變時（建立時還被隱藏、CSS 晚載入、放在會變寬的容器裡）重算並直接定位
+      if (typeof ResizeObserver === "function") {
+        const ro = new ResizeObserver(() => {
+          const prev = this.sw;
+          this.layout();
+          if (this.sw !== prev && this.index >= 0 && !this._st) pill.to(this.index * this.sw, { instant: true });
+        });
+        ro.observe(el);
+        this._off.push(() => ro.disconnect());
+      }
     }
   }
 
-  LiquidTabbar.version = "1.0.0";
+  LiquidTabbar.version = "1.0.1";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.Pill = Pill;   // 只要膠囊物理（自己畫畫面）時可直接用
   LiquidTabbar.defaults = DEFAULTS;

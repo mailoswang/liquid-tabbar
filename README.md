@@ -1,152 +1,234 @@
 # liquid-tabbar
 
-液態玻璃風格的底部分頁列，原生 JS + CSS，沒有相依套件、不需要建置。
+**English** | [繁體中文](README.zh-TW.md)
 
-- 按一下切換：膠囊浮起成透明玻璃、滑過去，前緣柔和停下、後緣撞上來擠壓再回彈一次
-- 按住左右拖動：膠囊跟著手指，蓋到的圖示即時變色，鬆手才切換
-- 膠囊到位後才通知你換頁，重建頁面不會卡住動畫
-- 格數、圖示、文字、顏色、尺寸、彈簧手感都可以調整
+A liquid-glass bottom tab bar in plain JavaScript and CSS. No dependencies, no build step.
 
-**[線上示範](https://mailoswang.github.io/liquid-tabbar/)**
+- **Tap to switch**: the pill lifts into clear glass and slides over. Its leading edge eases to a stop, then the trailing edge catches up, squashes into it and springs back once.
+- **Press and drag**: the pill follows your finger and recolors the icons it covers. The tab switches when you let go.
+- **Waits for the pill**: you are told to change pages only after the pill arrives, so rebuilding the page doesn't stutter the animation.
+- **Configurable**: tab count, icons, labels, colors, sizes and spring feel.
 
-## 安裝
+**[Live demo](https://mailoswang.github.io/liquid-tabbar/)**
 
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.0/liquid-tabbar.min.js"></script>
-```
-
-網址裡固定版本號（`@v1.0.0`），之後函式庫更新也不會突然改變你的專案。也可以直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
-
-## 快速開始
+## Install
 
 ```html
-<nav id="tabs"></nav>
-
-<script>
-  const tabs = new LiquidTabbar("#tabs", {
-    items: [
-      { id: "home",   label: "首頁", icon: '<path d="…"/>' },
-      { id: "search", label: "搜尋", icon: '<path d="…"/>' },
-      { id: "me",     label: "我的", icon: '<svg viewBox="0 0 24 24">…</svg>' }
-    ],
-    active: "home",
-    onSelect(item) { location.hash = "#/" + item.id },
-    onReselect(item) { window.scrollTo({ top: 0, behavior: "smooth" }) }
-  });
-</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js"></script>
 ```
 
-`icon` 可以給 24×24 viewBox 內的路徑（會用 `fill="currentColor"` 包成 `<svg>`），也可以直接給完整的 `<svg>`。
+The URL pins a version (`@v1.0.1`), so later releases won't change your project unexpectedly. You can also copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
 
-## 選項
+## Quick start
 
-| 選項 | 預設 | 說明 |
-|---|---|---|
-| `items` | `[]` | `[{ id, label, icon }]`，格數就是陣列長度 |
-| `active` | `0` | 選中的 `id` 或索引；`null` / `-1` 代表都不選（膠囊隱藏） |
-| `onSelect(item, index, info)` | — | 選了另一格。手勢：膠囊到位後才呼叫；鍵盤：立即呼叫。`info.source` 是 `"gesture"` 或 `"click"` |
-| `onReselect(item, index, info)` | — | 點了已選中的那格（常用來回到頂端） |
-| `physics` | 見下方 | 彈簧手感，只需要傳想改的欄位 |
-| `arriveDistance` | `6` | 膠囊離目標幾 px 內算到位 |
-| `arriveTimeout` | `320` | 最多等膠囊多久（ms）就呼叫 `onSelect` |
-| `liftHold` | `120` | 到位後多久收回浮起狀態（ms） |
-| `liftMin` / `liftMax` | `60` / `180` | 沒換頁時浮起狀態最短 / 最長保留（ms） |
-| `dragThreshold` | `6` | 手指移動幾 px 才算拖動 |
-| `clickGuard` | `800` | 手勢後擋掉晚到的 click 多久（ms），iOS 會晚送 click |
+Save this as an `.html` file and open it:
 
-也可以監聽事件：`tabs.el.addEventListener("ltb:select", e => e.detail.item)`、`"ltb:reselect"`。
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js"></script>
+  <style>
+    body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
+    main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
+  </style>
+</head>
+<body>
+  <main id="page"></main>
+  <nav id="tabs" aria-label="Main"></nav>
 
-## 方法
+  <script>
+    const ICONS = {
+      home: '<path d="M10.7 3.4a2 2 0 0 1 2.6 0l7.1 6.1c.4.4.6.9.6 1.4V19a2 2 0 0 1-2 2h-3.6a.9.9 0 0 1-.9-.9v-4.4a1.6 1.6 0 0 0-1.6-1.6h-1.8a1.6 1.6 0 0 0-1.6 1.6v4.4a.9.9 0 0 1-.9.9H5a2 2 0 0 1-2-2v-8.1c0-.5.2-1 .6-1.4z"/>',
+      search: '<circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="m15 15 5.5 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+      user: '<circle cx="12" cy="8" r="4.2"/><path d="M3.8 20.2c.8-4 4.2-6.4 8.2-6.4s7.4 2.4 8.2 6.4a.9.9 0 0 1-.9 1H4.7a.9.9 0 0 1-.9-1z"/>'
+    };
+
+    const show = id => { document.getElementById("page").textContent = "Current page: " + id; };
+
+    const tabs = new LiquidTabbar("#tabs", {
+      items: [
+        { id: "home",   label: "Home",   icon: ICONS.home },
+        { id: "search", label: "Search", icon: ICONS.search },
+        { id: "me",     label: "Me",     icon: ICONS.user }
+      ],
+      active: "home",
+      onSelect: item => show(item.id),
+      onReselect: () => window.scrollTo({ top: 0, behavior: "smooth" })
+    });
+    show("home");
+  </script>
+</body>
+</html>
+```
+
+`icon` is either path markup for a 24×24 viewBox (wrapped in an `<svg>` with `fill="currentColor"`) or a complete `<svg>` element.
+
+## Page setup
+
+- **Leave room at the bottom.** The bar is fixed to the bottom of the screen by default and covers whatever is underneath. Give your content bottom padding, e.g. `padding-bottom: calc(110px + env(safe-area-inset-bottom))`.
+- **Safe area on iPhone.** Add `viewport-fit=cover` to `<meta name="viewport">` so the bar clears the home indicator. Without it the bar still works but sits a fixed 8px from the bottom.
+- **Accessible name.** Give the `<nav>` an `aria-label` such as "Main". Each button gets its own `aria-label`, and the selected one gets `aria-current="page"`.
+- **The element's contents are replaced.** Pass an empty `<nav>`.
+
+## Routing
+
+When the user taps or drags on the bar, the pill moves to the new tab by itself. In `onSelect` you only change the page; you don't need to call `setActive`.
+
+When the page changes some other way (the browser's back button, an in-page link), call `setActive` to keep the bar in sync:
 
 ```js
-tabs.set({ items, active })          // 一次更新項目與選中格
-tabs.setItems(items)                 // 換項目；數量相同時只更新變動的格子，膠囊能繼續滑
-tabs.setActive("search")             // 或索引；{ instant: true } 不播動畫
-tabs.setActive(null)                 // 隱藏膠囊
-tabs.layout()                        // 容器尺寸改變時重算（視窗縮放已自動處理）
-tabs.destroy()
-tabs.el                              // 分頁列元素
-tabs.index                           // 目前選中的索引
+addEventListener("hashchange", () => {
+  const id = location.hash.slice(2) || "home";
+  tabs.setActive(id);          // no animation if it's already selected
+});
 ```
 
-## 外觀變數
+For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 
-在你的 CSS 覆寫 `.ltb` 上的變數即可（或直接寫在元素的 `style`）。預設是深色；加上 `ltb--light` class 換淺色，`ltb--auto` 跟隨系統。
+## ES modules and frameworks
 
-```css
-.ltb {
-  --ltb-accent: #0a84ff;        /* 膠囊蓋到的圖示顏色 */
-  --ltb-ink: #fff;              /* 一般圖示與文字 */
-  --ltb-bottom: 24px;           /* 離螢幕底部 */
+You can load it with `import`. It then registers `window.LiquidTabbar`:
+
+```js
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js";
+const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
+```
+
+In React, Vue and similar frameworks, the library manages the bar's contents. Give it an empty element that the framework won't re-render children into, create the bar on mount and call `destroy()` on unmount. React example:
+
+```jsx
+function Tabs({ items, active, onSelect }) {
+  const ref = useRef(null), bar = useRef(null);
+  useEffect(() => {
+    bar.current = new window.LiquidTabbar(ref.current, { items, active, onSelect });
+    return () => bar.current.destroy();
+  }, []);
+  useEffect(() => { bar.current.set({ items, active }); }, [items, active]);
+  return <nav ref={ref} aria-label="Main" />;
 }
 ```
 
-| 變數 | 說明 |
+`onSelect` is captured when the bar is created. If it depends on state that changes, read the latest value through a ref.
+
+## Options
+
+| Option | Default | Description |
+|---|---|---|
+| `items` | `[]` | `[{ id, label, icon }]`. The array length is the number of tabs |
+| `active` | `0` | Selected `id` or index. `null` / `-1` selects nothing and hides the pill |
+| `onSelect(item, index, info)` | — | A different tab was chosen. For gestures it fires after the pill arrives; for keyboard it fires immediately. `info.source` is `"gesture"` or `"click"` |
+| `onReselect(item, index, info)` | — | The already-selected tab was tapped (often used to scroll to top) |
+| `physics` | see below | Spring feel; pass only the fields you want to change |
+| `arriveDistance` | `6` | How close (px) the pill must be to count as arrived |
+| `arriveTimeout` | `320` | Longest wait (ms) for the pill before `onSelect` fires anyway |
+| `liftHold` | `120` | Delay (ms) after arrival before the lifted glass settles back |
+| `liftMin` / `liftMax` | `60` / `180` | Shortest / longest (ms) the lifted state is kept when no tab changes |
+| `dragThreshold` | `6` | How far (px) the finger must move to count as a drag |
+| `clickGuard` | `800` | How long (ms) to swallow late clicks after a gesture (iOS sends clicks late) |
+
+You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.detail.item)` and `"ltb:reselect"`.
+
+## Methods
+
+```js
+tabs.set({ items, active })          // update items and selection together
+tabs.setItems(items)                 // replace items; with the same count only changed tabs update, so the pill keeps sliding
+tabs.setActive("search")             // or an index; { instant: true } skips the animation
+tabs.setActive(null)                 // hide the pill
+tabs.layout()                        // recompute sizes by hand (rarely needed; size changes are handled automatically)
+tabs.destroy()                       // remove listeners and contents
+tabs.el                              // the bar element
+tabs.index                           // selected index
+tabs.items                           // current items
+```
+
+## CSS variables
+
+Override the variables on `.ltb` in your CSS (or set them in the element's `style`). The default look is dark. Add the `ltb--light` class for light, or `ltb--auto` to follow the system setting.
+
+```css
+.ltb {
+  --ltb-accent: #0a84ff;        /* color of icons under the pill */
+  --ltb-ink: #fff;              /* regular icons and labels */
+  --ltb-bottom: 24px;           /* distance from the bottom of the screen */
+}
+```
+
+| Variable | Description |
 |---|---|
-| `--ltb-ink` / `--ltb-accent` / `--ltb-focus` | 圖示文字顏色 / 選中顏色 / 鍵盤聚焦外框 |
-| `--ltb-ind` | 平常的膠囊底色 |
-| `--ltb-lift-bg` / `--ltb-lift-ring` / `--ltb-lift-edge` / `--ltb-lift-shadow` | 按住時浮起的玻璃膠囊 |
-| `--ltb-bg` / `--ltb-blur` / `--ltb-rim` / `--ltb-shadow` / `--ltb-ring` | 玻璃底板：底色、模糊、邊緣光、投影、外圈亮邊 |
-| `--ltb-width` / `--ltb-height` / `--ltb-pad-x` / `--ltb-pad-y` | 尺寸 |
-| `--ltb-bottom` / `--ltb-z` | 位置（預設貼齊 iOS 原生分頁列）、層級 |
-| `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | 圖示與文字 |
-| `--ltb-pill-pad` | 膠囊比一格寬多少 |
-| `--ltb-lift-w` / `--ltb-lift-h` / `--ltb-lift-scale` | 按住時膠囊變寬、變高、整條放大 |
-| `--ltb-ease` / `--ltb-press` / `--ltb-release` | 浮起與收回的曲線與時間 |
+| `--ltb-ink` / `--ltb-accent` / `--ltb-focus` | Icon and label color / selected color / keyboard focus ring |
+| `--ltb-ind` | Pill color at rest |
+| `--ltb-lift-bg` / `--ltb-lift-ring` / `--ltb-lift-edge` / `--ltb-lift-shadow` | The lifted glass pill while pressed |
+| `--ltb-bg` / `--ltb-blur` / `--ltb-rim` / `--ltb-shadow` / `--ltb-ring` | Glass bar: fill, blur, edge glow, drop shadow, outer highlight ring |
+| `--ltb-width` / `--ltb-height` / `--ltb-pad-x` / `--ltb-pad-y` | Size |
+| `--ltb-bottom` / `--ltb-z` | Position (defaults to where the native iOS tab bar sits) and stacking order |
+| `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | Icons and labels |
+| `--ltb-pill-pad` | How much wider the pill is than one tab |
+| `--ltb-lift-w` / `--ltb-lift-h` / `--ltb-lift-scale` | How much the pill widens and grows taller, and how much the whole bar scales, while pressed |
+| `--ltb-ease` / `--ltb-press` / `--ltb-release` | Easing and duration for lifting and settling |
 
-想把分頁列放在頁面裡而不是固定在底部，覆寫 `position`、`left`、`translate`、`bottom` 即可。
+To place the bar inside the page instead of fixing it to the bottom, override `position`, `left`, `translate` and `bottom`, e.g. `.ltb { position: relative; left: auto; translate: none; bottom: auto }`.
 
-## 手感（physics）
+## Physics
 
 ```js
 new LiquidTabbar("#tabs", {
   physics: {
-    tap:  { C: 40 },   // 輕按：擠壓更明顯
-    drag: { S: 30 }    // 拖動：拉長更明顯
+    tap:  { C: 40 },   // tap: stronger squash
+    drag: { S: 30 }    // drag: stronger stretch
   }
 });
 ```
 
-| 欄位 | 輕按 `tap` | 拖動 `drag` | 說明 |
+| Field | Tap `tap` | Drag `drag` | Description |
 |---|---|---|---|
-| `k` / `c` | 420 / 41 | 1400 / 70 | 前緣彈簧剛度 / 阻尼。`c = 2√k` 是臨界阻尼：不過衝、指哪停哪 |
-| `kt` / `ct` | 200 / 12 | 220 / 13 | 後緣追前緣的彈簧；阻尼越小，起步拉長與停下時的撞擊越明顯 |
-| `S` | 16 | 24 | 拉長上限（px） |
-| `C` | 32 | 24 | 擠壓上限（px） |
-| `bulge` | .0013 | .002 | 擠壓 1px 時上下撐開的比例 |
+| `k` / `c` | 420 / 41 | 1400 / 70 | Leading-edge spring stiffness / damping. `c = 2√k` is critical damping: no overshoot, it stops exactly on target |
+| `kt` / `ct` | 200 / 12 | 220 / 13 | Spring pulling the trailing edge after the leading edge. Less damping means more stretch on take-off and a harder squash on stop |
+| `S` | 16 | 24 | Maximum stretch (px) |
+| `C` | 32 | 24 | Maximum squash (px) |
+| `bulge` | .0013 | .002 | Vertical bulge per 1px of squash |
 
-只想要這套膠囊物理、畫面自己畫時，可以直接用 `LiquidTabbar.Pill`：
+If you only want the pill physics and draw everything yourself, use `LiquidTabbar.Pill`:
 
 ```js
 const pill = LiquidTabbar.Pill((x, cmp, sy) => {
-  // x：位置、cmp：寬度減少量（負值＝拉長）、sy：垂直伸縮
+  // x: position, cmp: width reduction (negative = stretched), sy: vertical scale
 }, LiquidTabbar.physics);
-pill.to(200);                    // 滑到 200px
-pill.to(120, { drag: true });    // 拖動模式（跟手）
-pill.arrive(() => {}, 6, 320);   // 到位（或逾時）後呼叫
+pill.to(200);                    // slide to 200px
+pill.to(120, { drag: true });    // drag mode (follows the finger)
+pill.arrive(() => {}, 6, 320);   // call back on arrival (or after the timeout)
 ```
 
-## 相容性
+## Browser support
 
-Safari / iOS 16.4+、Chrome 120+、Firefox 128+（用到 `@property`、`mask-composite`、`clamp()`）。開啟「減少動態效果」時直接定位不播動畫；開啟「降低透明度」時取消背景模糊。
+Safari / iOS 16.4+, Chrome 120+ and Firefox 128+ (uses `@property`, `mask-composite` and `clamp()`). With "Reduce Motion" on, the pill jumps into place without animating. With "Reduce Transparency" on, the background blur is turned off.
 
-## 網頁做不到的效果
+## What browsers can't do
 
-liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目前瀏覽器的能力，沒有實作或只能近似：
+liquid-tabbar imitates the iOS liquid-glass tab bar. Some of its effects are beyond what browsers currently allow, so they are left out or approximated:
 
-| 原生效果 | 網頁的限制 | 這裡的做法 |
+| Native effect | Browser limitation | What liquid-tabbar does |
 |---|---|---|
-| **真正的折射**：背後內容在玻璃邊緣彎曲、放大 | CSS `backdrop-filter` 只有模糊、飽和度等固定濾鏡。能扭曲背景的 `backdrop-filter: url(#svg濾鏡)` 只有 Chromium 支援，Safari / iOS 與 Firefox 都不支援。WebGL 做法得先把整頁截成圖（例如 html2canvas），截圖是靜態的，捲動、換頁、外部圖片都對不上，在手機上也很耗效能 | 模糊＋由上往下的染色＋越靠邊越亮的邊緣光，做出類似的質感 |
-| **色散**：玻璃邊緣出現彩虹色的分光 | 同上，需要逐像素處理背景，CSS 做不到 | 不做 |
-| **依背景調整玻璃**：背後是亮的內容時自動變成淺色玻璃、暗的時變深色 | 網頁讀不到元素背後的像素顏色 | 提供深色、淺色（`ltb--light`）與跟隨系統（`ltb--auto`）三種外觀，由你依頁面切換 |
-| **觸覺回饋**：切換分頁或拖過每一格時輕震一下 | iOS Safari 不支援 `navigator.vibrate()`，網頁沒有可用的震動 API | 不做 |
-| **隨手機傾斜移動的高光** | 需要陀螺儀資料，iOS 上必須由使用者點按同意權限，不適合用在分頁列 | 高光固定在上緣 |
-| **120Hz 動畫**：ProMotion 螢幕上的更新率 | iOS Safari 預設把 `requestAnimationFrame` 限制在 60fps | 膠囊物理依實際經過的時間計算，掉幀時直接補到正確位置，不會變慢；但最高就是 60fps |
-| **與系統手勢整合**：例如捲動時分頁列自動縮小、跟系統的返回滑動連動 | 網頁拿不到系統手勢的狀態 | 不內建；需要的話可以在自己的頁面監聽捲動，再改 `--ltb-*` 變數 |
+| **True refraction**: content behind the glass bends and magnifies at the edges | CSS `backdrop-filter` only offers fixed filters such as blur and saturation. `backdrop-filter: url(#svg-filter)`, which can distort the backdrop, works only in Chromium, not in Safari / iOS or Firefox. WebGL approaches need a screenshot of the whole page first (e.g. html2canvas). That screenshot is static, so it falls out of sync on scroll, page changes and cross-origin images, and it is expensive on phones | Blur, a top-to-bottom tint and an edge glow that brightens toward the rim give a similar feel |
+| **Chromatic aberration**: rainbow fringes at the glass edge | Same as above: it needs per-pixel processing of the backdrop, which CSS can't do | Not done |
+| **Adapting to the background**: the glass turns light over bright content and dark over dark content | Web pages can't read the pixel colors behind an element | Dark, light (`ltb--light`) and system (`ltb--auto`) looks; switch them per page yourself |
+| **Haptics**: a light tap when switching tabs or dragging across them | iOS Safari doesn't support `navigator.vibrate()`, and there is no other vibration API for web pages | Not done |
+| **Highlights that move as the phone tilts** | Needs gyroscope data, which iOS only provides after the user taps to grant permission, which doesn't suit a tab bar | The highlight stays on the top edge |
+| **120Hz animation** on ProMotion screens | iOS Safari caps `requestAnimationFrame` at 60fps by default | The pill physics run on real elapsed time and catch up after dropped frames, so they never slow down, but the frame rate tops out at 60fps |
+| **System gesture integration**, e.g. shrinking the bar on scroll or following the system back swipe | Web pages can't see the state of system gestures | Not built in. If you need it, listen for scroll in your page and change the `--ltb-*` variables |
 
-另外，瀏覽器的長按選單（拷貝、預覽圖片）只在分頁列本身關掉（`-webkit-touch-callout: none`），頁面其他地方由你的專案決定。
+The browser's long-press menu (copy, image preview) is disabled only on the bar itself (`-webkit-touch-callout: none`). The rest of the page is up to your project.
 
-## 授權
+## Changelog
+
+- **v1.0.1**: If the bar was created while it couldn't be seen yet (e.g. hidden, or before the CSS loaded), the pill sat in the wrong place once shown. Size changes are now picked up automatically.
+- **v1.0.0**: First release.
+
+## License
 
 MIT
