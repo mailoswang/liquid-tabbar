@@ -1,8 +1,10 @@
-# liquid-tabbar
+# liquid-tabbar · Native Liquid Glass, on the web
 
 **English** | [繁體中文](README.zh-TW.md)
 
-A liquid-glass bottom tab bar in plain JavaScript and CSS. No dependencies, no build step.
+**A web recreation of the native iOS Liquid Glass tab bar.** liquid-tabbar brings the look and feel of the system tab bar to any web page: frosted glass, a jelly pill that stretches and squashes, and press-and-drag to switch tabs. It's plain JavaScript and CSS with no dependencies and no build step.
+
+Built for web apps that run in the browser or are added to the iPhone home screen, so they can match native apps. For effects that browsers can't reproduce yet, see [What browsers can't do](#what-browsers-cant-do).
 
 - **Tap to switch**: the pill lifts into clear glass and slides over. Its leading edge eases to a stop, then the trailing edge catches up, squashes into it and springs back once.
 - **Press and drag**: the pill follows your finger and recolors the icons it covers. The tab switches when you let go.
