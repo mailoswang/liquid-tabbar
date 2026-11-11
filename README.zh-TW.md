@@ -6,21 +6,26 @@
 
 適合在瀏覽器或加入 iPhone 主畫面的網頁 App，讓它看起來、用起來都跟原生 App 一致。目前瀏覽器還做不到的效果，請見[網頁做不到的效果](#網頁做不到的效果)。
 
-- 按一下切換：膠囊浮起成透明玻璃、滑過去，前緣柔和停下、後緣撞上來擠壓再回彈一次
-- 按住左右拖動：膠囊跟著手指，蓋到的圖示即時變色，鬆手才切換
-- 膠囊到位後才通知你換頁，重建頁面不會卡住動畫
-- 格數、圖示、文字、顏色、尺寸、彈簧手感都可以調整
+動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析調校：
+
+- **按下**：深色膠囊淡出、浮起成透明玻璃，放大約 1.3 倍、上下超出底板；整條分頁列放大約 3–5%
+- **滑行**：彈簧帶著膠囊滑向目標，速度越快拉得越長、高度略壓扁
+- **折射**：玻璃下的變色圖示以膠囊中心放大約 1.2 倍
+- **落定**：到位後縮回深色膠囊，尺寸略過衝再回彈一次
+- **按住拖動**：膠囊跟著手指，蓋到的圖示即時變色，鬆手才切換
+- **立即換頁**：放開的瞬間就呼叫 `onSelect`，跟 iOS 一樣；頁面切換時動畫繼續播完
+- 格數、圖示、文字、顏色、尺寸、動畫都可以調整
 
 **[線上示範](https://mailoswang.github.io/liquid-tabbar/)**
 
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定版本號（`@v1.0.1`），之後函式庫更新也不會突然改變你的專案。也可以直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
+網址裡固定版本號（`@v2.0.0`），之後函式庫更新也不會突然改變你的專案。也可以直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
 
 ## 快速開始
 
@@ -32,8 +37,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -92,12 +97,14 @@ addEventListener("hashchange", () => {
 
 某些頁面不屬於任何分頁時，用 `tabs.setActive(null)` 隱藏膠囊。
 
+`onSelect` 在手指放開的瞬間就呼叫，這時膠囊還在動畫中。如果你的頁面渲染很重、讓動畫卡頓，可以把渲染延後一兩個畫面（例如 `requestAnimationFrame(() => render())`）。
+
 ## ES module 與框架
 
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -123,14 +130,10 @@ function Tabs({ items, active, onSelect }) {
 |---|---|---|
 | `items` | `[]` | `[{ id, label, icon }]`，格數就是陣列長度 |
 | `active` | `0` | 選中的 `id` 或索引；`null` / `-1` 代表都不選（膠囊隱藏） |
-| `onSelect(item, index, info)` | — | 選了另一格。手勢：膠囊到位後才呼叫；鍵盤：立即呼叫。`info.source` 是 `"gesture"` 或 `"click"` |
+| `onSelect(item, index, info)` | — | 選了另一格。手指放開的瞬間呼叫（鍵盤則立即呼叫）。`info.source` 是 `"gesture"` 或 `"click"` |
 | `onReselect(item, index, info)` | — | 點了已選中的那格（常用來回到頂端） |
-| `physics` | 見下方 | 彈簧手感，只需要傳想改的欄位 |
-| `arriveDistance` | `6` | 膠囊離目標幾 px 內算到位 |
-| `arriveTimeout` | `320` | 最多等膠囊多久（ms）就呼叫 `onSelect` |
-| `liftHold` | `120` | 到位後多久收回浮起狀態（ms） |
-| `liftMin` / `liftMax` | `60` / `180` | 沒換頁時浮起狀態最短 / 最長保留（ms） |
-| `dragThreshold` | `6` | 手指移動幾 px 才算拖動 |
+| `physics` | 見下方 | 動畫參數，只需要傳想改的欄位 |
+| `dragThreshold` | `8` | 手指移動幾 px 才算拖動 |
 | `clickGuard` | `800` | 手勢後擋掉晚到的 click 多久（ms），iOS 會晚送 click |
 
 也可以監聽事件：`tabs.el.addEventListener("ltb:select", e => e.detail.item)`、`"ltb:reselect"`。
@@ -139,7 +142,7 @@ function Tabs({ items, active, onSelect }) {
 
 ```js
 tabs.set({ items, active })          // 一次更新項目與選中格
-tabs.setItems(items)                 // 換項目；數量相同時只更新變動的格子，膠囊能繼續滑
+tabs.setItems(items)                 // 換項目；數量相同時只重建變動的格子
 tabs.setActive("search")             // 或索引；{ instant: true } 不播動畫
 tabs.setActive(null)                 // 隱藏膠囊
 tabs.layout()                        // 手動重算尺寸（通常不需要，尺寸改變會自動處理）
@@ -170,41 +173,40 @@ tabs.items                           // 目前的項目
 | `--ltb-width` / `--ltb-height` / `--ltb-pad-x` / `--ltb-pad-y` | 尺寸 |
 | `--ltb-bottom` / `--ltb-z` | 位置（預設貼齊 iOS 原生分頁列）、層級 |
 | `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | 圖示與文字 |
-| `--ltb-pill-pad` | 膠囊比一格寬多少 |
-| `--ltb-lift-w` / `--ltb-lift-h` / `--ltb-lift-scale` | 按住時膠囊變寬、變高、整條放大 |
-| `--ltb-ease` / `--ltb-press` / `--ltb-release` | 浮起與收回的曲線與時間 |
+| `--ltb-pill-pad` | 平常的膠囊比一格寬多少 |
+
+動畫本身的大小與節奏用 `physics` 調整（見下方）。
 
 想把分頁列放在頁面裡而不是固定在底部，覆寫 `position`、`left`、`translate`、`bottom` 即可，例如 `.ltb { position: relative; left: auto; translate: none; bottom: auto }`。
 
-## 手感（physics）
+## 動畫參數（physics）
 
 ```js
 new LiquidTabbar("#tabs", {
   physics: {
-    tap:  { C: 40 },   // 輕按：擠壓更明顯
-    drag: { S: 30 }    // 拖動：拉長更明顯
+    growW: 1.2,                     // 按住時玻璃小一點
+    settle: { k: 260, zeta: .7 }    // 落定時比較穩、回彈少一點
   }
 });
 ```
 
-| 欄位 | 輕按 `tap` | 拖動 `drag` | 說明 |
-|---|---|---|---|
-| `k` / `c` | 420 / 41 | 1400 / 70 | 前緣彈簧剛度 / 阻尼。`c = 2√k` 是臨界阻尼：不過衝、指哪停哪 |
-| `kt` / `ct` | 200 / 12 | 220 / 13 | 後緣追前緣的彈簧；阻尼越小，起步拉長與停下時的撞擊越明顯 |
-| `S` | 16 | 24 | 拉長上限（px） |
-| `C` | 32 | 24 | 擠壓上限（px） |
-| `bulge` | .0013 | .002 | 擠壓 1px 時上下撐開的比例 |
+彈簧參數是剛度 `k` 與阻尼比 `zeta`（1 ＝ 不過衝，越小越會回彈）。
 
-只想要這套膠囊物理、畫面自己畫時，可以直接用 `LiquidTabbar.Pill`：
+| 欄位 | 預設 | 說明 |
+|---|---|---|
+| `move` | `{ k: 420, zeta: .82 }` | 膠囊移動的彈簧（些微過衝） |
+| `lift` | `{ k: 900, zeta: .90 }` | 按下時浮起成玻璃：快速、幾乎不過衝 |
+| `settle` | `{ k: 260, zeta: .46 }` | 到位後縮回：較慢、明顯回彈一次 |
+| `growW` / `growH` | `1.3` / `1.33` | 按住時玻璃變寬 / 變高的倍率 |
+| `mag` | `1.2` | 玻璃下圖示的放大倍率 |
+| `stretch` / `stretchMax` | `.065` / `1.4` | 每 1 px/s 速度多拉長幾 px / 拉長上限（以一格寬為單位） |
+| `squash` / `squashMax` | `9000` / `.14` | 速度讓膠囊壓扁的程度（越小越扁）/ 壓扁上限 |
+| `barX` / `barY` | `.035` / `.05` | 按住時整條分頁列水平 / 垂直放大多少 |
+| `hold` | `120` | 放開後玻璃至少再維持多久（ms） |
+| `overdrag` | `.12` | 拖動時可以拉出最左／最右格多少（以一格寬為單位） |
+| `edge` | `9` | 浮起時玻璃最多可以超出分頁列左右兩端幾 px。平常膠囊不會超出；在最左／最右格放大時往內側長 |
 
-```js
-const pill = LiquidTabbar.Pill((x, cmp, sy) => {
-  // x：位置、cmp：寬度減少量（負值＝拉長）、sy：垂直伸縮
-}, LiquidTabbar.physics);
-pill.to(200);                    // 滑到 200px
-pill.to(120, { drag: true });    // 拖動模式（跟手）
-pill.arrive(() => {}, 6, 320);   // 到位（或逾時）後呼叫
-```
+預設值在 `LiquidTabbar.physics`。
 
 ## 相容性
 
@@ -228,6 +230,11 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.0.0**：依 iOS 原生分頁列的錄影重新做動畫：按住時玻璃超出底板、底下圖示放大、整條分頁列微微放大，落定時回彈一次。`onSelect` 改成放開瞬間呼叫，不再等膠囊到位。不相容的變更：
+  - `physics` 換成新欄位（見[動畫參數](#動畫參數physics)），原本的 `tap` / `drag` 兩組已移除
+  - 移除選項：`arriveDistance`、`arriveTimeout`、`liftHold`、`liftMin`、`liftMax`
+  - 移除 CSS 變數：`--ltb-lift-w`、`--ltb-lift-h`、`--ltb-lift-scale`、`--ltb-ease`、`--ltb-press`、`--ltb-release`
+  - 移除 `LiquidTabbar.Pill`，以及選中按鈕上的 `on` class（請改用 `[aria-current="page"]`）
 - **v1.0.1**：分頁列建立時還看不到（例如被隱藏、CSS 晚載入）時，顯示後膠囊會停在錯的位置；現在尺寸一改變就自動重算。
 - **v1.0.0**：第一版。
 

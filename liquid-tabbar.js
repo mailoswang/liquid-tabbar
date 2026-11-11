@@ -1,4 +1,13 @@
-/*! liquid-tabbar v1.0.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.0.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+
+/* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
+ *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
+ *   ② 滑行：位置由彈簧追向目標，寬度隨速度拉長、高度略壓扁
+ *   ③ 折射：玻璃下的變色圖示以膠囊中心放大約 1.2 倍
+ *   ④ 落定：到位後縮回深色膠囊，尺寸略過衝再回彈
+ *   左右兩端：膠囊不超出底板（浮起時最多外擴 edge px），在最左／最右格放大時往內側長
+ *   ⑤ 換頁：放開瞬間就通知，不等動畫
+ */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.LiquidTabbar = factory();
@@ -6,35 +15,41 @@
   "use strict";
 
   /* ========================================================================
-     預設值：在 new LiquidTabbar(el, options) 傳入同名欄位即可覆寫
+     動畫參數（錄影實測後調校）。new LiquidTabbar(el, { physics: {...} }) 可覆寫個別欄位
      ======================================================================== */
-
-  // 膠囊物理（兩組：輕按 tap、按住拖動 drag）
-  //  k / c   前緣彈簧的剛度 / 阻尼（c = 2√k 為臨界阻尼：不過衝，指哪停哪）
-  //  kt / ct 後緣追前緣的彈簧（阻尼小於臨界：起步落後＝拉長，前緣停下時撞上來＝煞車擠壓）
-  //  S / C   畫面上拉長 / 擠壓的上限（px，用 tanh 平滑壓住）
-  //  bulge   擠壓 1px 時上下撐開的比例
   const PHYSICS = {
-    tap: { k: 420, c: 41, kt: 200, ct: 12, S: 16, C: 32, bulge: .0013 },
-    drag: { k: 1400, c: 70, kt: 220, ct: 13, S: 24, C: 24, bulge: .002 }
+    move:   { k: 420, zeta: .82 },  // 位置彈簧：剛度 / 阻尼比（<1 會些微過衝）
+    lift:   { k: 900, zeta: .90 },  // 浮起：快速、幾乎不過衝（錄影 0–50 ms）
+    settle: { k: 260, zeta: .46 },  // 落定：較慢、明顯回彈一次（錄影 250–500 ms）
+    growW: 1.3,      // 浮起時膠囊變寬倍率
+    growH: 1.33,     // 浮起時膠囊變高倍率（超出底板上下緣）
+    mag: 1.2,        // 玻璃下圖示放大倍率
+    stretch: .065,   // 每 1 px/s 速度拉長幾 px
+    stretchMax: 1.4, // 拉長上限（以一格寬為單位）
+    squash: 9000,    // 速度造成高度壓扁的分母（越小越扁）
+    squashMax: .14,  // 壓扁上限
+    barX: .035,      // 浮起時底板水平放大
+    barY: .05,       // 浮起時底板垂直放大
+    hold: 120,       // 放開後玻璃至少再維持多久（ms）
+    overdrag: .12,   // 拖動時可以拉出最左／最右格多少（以一格寬為單位）
+    edge: 9          // 浮起時膠囊最多可以超出底板左右兩端幾 px（平常不超出）
   };
 
   const DEFAULTS = {
-    items: [],            // [{ id, label, icon }]；icon 可為完整 <svg> 或 24×24 viewBox 內的路徑
-    active: 0,            // 目前選中的 id 或索引；null / -1 代表都不選（膠囊隱藏）
-    onSelect: null,       // (item, index, info) 選了另一格。手勢：膠囊到位後才呼叫；鍵盤：立即
-    onReselect: null,     // (item, index, info) 點了已選中的那格（例如回到頂端）
+    items: [],           // [{ id, label, icon }]；icon 可為完整 <svg> 或 24×24 viewBox 內的路徑
+    active: 0,           // 目前選中的 id 或索引；null / -1 代表都不選（膠囊隱藏）
+    onSelect: null,      // (item, index, info) 選了另一格（放開瞬間呼叫）
+    onReselect: null,    // (item, index, info) 點了已選中的那格
     physics: PHYSICS,
-    arriveDistance: 6,    // 膠囊離目標多近就算到位（px）
-    arriveTimeout: 320,   // 最多等膠囊多久（ms），之後無論如何都呼叫 onSelect
-    liftHold: 120,        // 到位後再過多久收回浮起狀態（ms）
-    liftMin: 60,          // 沒換頁時，浮起狀態最短 / 最長保留（ms）
-    liftMax: 180,
-    dragThreshold: 6,     // 手指移動超過幾 px 才算拖動
-    clickGuard: 800       // 手勢結束後擋掉多久內晚到的 click（iOS 會晚送）
+    dragThreshold: 8,    // 手指移動超過幾 px 才算拖動
+    clickGuard: 800      // 手勢結束後擋掉多久內晚到的 click（iOS 會晚送）
   };
 
+  // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
+  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "scale"];
+
   const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const svg = src => {
     if (!src) return "";
@@ -44,131 +59,68 @@
       : `<svg class="ltb-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${src}</svg>`;
   };
 
-  /* ========================================================================
-     膠囊的果凍動畫
-     前緣（往前進方向那側）用不過衝的柔和彈簧追目標；後緣用較有彈性的彈簧追前緣：
-     起步時落後（拉長），前緣停下時衝上去撞進來（煞車擠壓），擠到最深後改用臨界阻尼平順回彈，
-     每次移動只彈一次。擠壓時上下微微撐開。
-     write(x, cmp, sy) 每幀被呼叫，負責把結果寫到畫面上
-     ======================================================================== */
-  function Pill(write, physics) {
-    let P = 0, vP = 0, T = 0, vT = 0, t = 0, dir = 1, wd = 0, calm = false;
-    let raf = 0, last = 0, m = physics.tap, live = false, onArrive = null, arriveAt = 6;
-
-    // 寬度變化 wd（正＝拉長、負＝擠壓）；前緣固定在 P，後緣在 P − dir·wd
-    const apply = () => write(P - dir * wd / 2, -wd, 1 + Math.max(0, -wd) * m.bulge);
-    const fire = () => { const f = onArrive; onArrive = null; f && f(); };
-
-    // 照實際經過的時間補算（掉幀時直接跳到該在的位置）；細分成每步 2ms 以內，彈簧才穩定
-    const step = now => {
-      const dt = Math.min(.1, (now - last) / 1000 || .016), n = Math.ceil(dt / .002);
-      last = now;
-      for (let i = 0, h = dt / n; i < n; i++) {
-        vP += (m.k * (t - P) - m.c * vP) * h; P += vP * h;
-        // 只彈一次：擠到最深、開始彈回的那一刻起，後緣改用臨界阻尼
-        const g = (P - T) * dir;
-        if (!calm && g < 0 && (vP - vT) * dir > 0) calm = true;
-        if (calm && live && g > 2) calm = false;
-        vT += (m.kt * (P - T) + (calm ? 2 * Math.sqrt(m.kt) * (vP - vT) : -m.ct * vT)) * h; T += vT * h;
-      }
-      // 拖動時前進方向跟著手指變；換方向時寬度平順過渡
-      if (live && Math.abs(vP) > 200) dir = Math.sign(vP);
-      const raw = (P - T) * dir, tw = raw > 0 ? m.S * Math.tanh(raw / m.S) : m.C * Math.tanh(raw / m.C);
-      wd += (tw - wd) * Math.min(1, dt * (live ? 30 : 60));
-      apply();
-      if (onArrive && Math.abs(t - P) < arriveAt) fire();
-      if (!live && Math.abs(t - P) < .3 && Math.abs(vP) < 4 && Math.abs(P - T) < 1 && Math.abs(vT) < 15) {
-        P = T = t; vP = vT = 0; wd = 0; apply(); raf = 0; return;
-      }
-      raf = requestAnimationFrame(step);
-    };
-
-    return {
-      get target() { return t; },
-      // 膠囊滑到目標附近再做事（例如換頁：重建頁面很吃效能，等膠囊到位再做才不會卡住動畫）
-      arrive(f, dist, ms) {
-        arriveAt = dist;
-        if (!raf || Math.abs(t - P) < dist) { f(); return; }
-        let done = false;
-        const g = () => { if (!done) { done = true; onArrive = null; f(); } };
-        onArrive = g; setTimeout(g, ms);
-      },
-      to(nt, o = {}) {
-        if (!o.drag && Math.abs(nt - t) > .5) { dir = Math.sign(nt - P) || dir; calm = false; }
-        t = nt; live = !!o.drag; m = o.drag ? physics.drag : physics.tap;
-        if (o.instant || reduced()) {
-          P = T = t; vP = vT = 0; wd = 0; apply();
-          cancelAnimationFrame(raf); raf = 0; fire(); return;
-        }
-        if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); }
-      },
-      stop() { cancelAnimationFrame(raf); raf = 0; onArrive = null; }
-    };
+  // 阻尼彈簧，依實際經過時間細分成 ≤2ms 的小步（掉幀時也穩定）
+  function spring(x, v, target, k, zeta, dt) {
+    const c = 2 * zeta * Math.sqrt(k), n = Math.max(1, Math.ceil(dt / .002)), h = dt / n;
+    for (let i = 0; i < n; i++) { v += (k * (target - x) - c * v) * h; x += v * h; }
+    return [x, v];
   }
 
-  /* ========================================================================
-     LiquidTabbar
-     ======================================================================== */
   class LiquidTabbar {
     constructor(el, options = {}) {
       if (typeof el === "string") el = document.querySelector(el);
       if (!el) { el = document.createElement("nav"); document.body.appendChild(el); }
       const o = Object.assign({}, DEFAULTS, options);
+      o.physics = Object.assign({}, PHYSICS, options.physics);
       const ph = options.physics || {};
-      o.physics = { tap: Object.assign({}, PHYSICS.tap, ph.tap), drag: Object.assign({}, PHYSICS.drag, ph.drag) };
+      for (const k of ["move", "lift", "settle"]) o.physics[k] = Object.assign({}, PHYSICS[k], ph[k]);
       this.el = el;
       this.options = o;
       this.items = [];
-      this.index = -1;      // 目前選中的格子
-      this.sw = 0;          // 一格寬（px）
-      this._placed = false; // 第一次定位直接放好，不從最左邊滑過來
-      this._st = null;      // 手勢狀態
-      this._skip = 0;
+      this.index = -1;
+      this.sw = 0;
+      // 動畫狀態：x 膠囊中心、v 速度、tx 目標；p 浮起程度（可過衝）、pv 其速度
+      this._s = { x: 0, v: 0, tx: 0, p: 0, pv: 0, down: false, hold: 0 };
+      this._g = null;      // 手勢
       this._raf = 0;
+      this._last = 0;
+      this._skip = 0;
+      this._placed = false;
 
       el.classList.add("ltb");
-      el.innerHTML = '<span class="ltb-ind" aria-hidden="true"></span><span class="ltb-clip" aria-hidden="true"><span class="ltb-copy"></span></span>';
-      this._ind = el.firstChild;
+      el.innerHTML = '<span class="ltb-ind" aria-hidden="true"></span><span class="ltb-lens" aria-hidden="true"></span>' +
+        '<span class="ltb-clip" aria-hidden="true"><span class="ltb-copy"></span></span>';
       this._copy = el.querySelector(".ltb-copy");
-
-      const st = el.style;
-      this._pill = Pill((x, cmp, sy) => {
-        st.setProperty("--ltb-cmp", cmp.toFixed(2) + "px");
-        st.setProperty("--ltb-x", x.toFixed(2) + "px");
-        st.setProperty("--ltb-sx", "1");
-        st.setProperty("--ltb-sy", sy.toFixed(4));
-      }, o.physics);
-
+      this._clip = el.querySelector(".ltb-clip");
       this._bind();
       this.set({ items: o.items, active: o.active });
     }
 
     /* ---------- 公開 API ---------- */
 
-    // 一次更新項目與選中狀態：bar.set({ items, active })
     set({ items, active } = {}, opts) {
       if (items) this.setItems(items);
       if (active !== undefined) this.setActive(active, opts);
       return this;
     }
 
-    // 換項目：數量相同時只更新有變的那格（DOM 不重建，膠囊才能滑過去）
+    // 換項目。數量不變時只更新有變的那格：換頁時常會重設項目，DOM 不重建，動畫才不受影響
     setItems(items) {
       const el = this.el, n = items.length;
-      let btns = this._buttons(), copies = this._copy.children;
+      let btns = this._buttons();
       if (btns.length !== n) {
         btns.forEach(b => b.remove());
         this._copy.innerHTML = "";
-        const clip = el.querySelector(".ltb-clip");
         for (let i = 0; i < n; i++) {
           const b = document.createElement("button");
           b.type = "button"; b.className = "ltb-item"; b.style.setProperty("--ltb-j", i);
-          el.insertBefore(b, clip);
+          el.insertBefore(b, this._clip);
           this._copy.appendChild(document.createElement("b"));
         }
         el.style.setProperty("--ltb-n", n);
-        btns = this._buttons(); copies = this._copy.children;
+        btns = this._buttons();
       }
+      const copies = this._copy.children;
       items.forEach((a, i) => {
         const b = btns[i], sig = [a.id, a.label, a.icon].join("\u0000");
         if (b._ltb === sig) return;
@@ -183,33 +135,101 @@
       return this;
     }
 
-    // 選中某格（id 或索引）；null / -1 隱藏膠囊。opts.instant：不播動畫直接定位
+    // 選中某格（id 或索引）；null / -1 隱藏膠囊；opts.instant 直接定位
     setActive(key, opts = {}) {
       const i = this._indexOf(key);
       this._mark(i);
       if (i < 0) return this;
       this.index = i;
-      this._pill.to(i * this.sw, { instant: opts.instant || !this._placed });
+      this._go(this._center(i), opts.instant || !this._placed);
       this._placed = true;
       return this;
     }
 
-    // 尺寸改變時重算（視窗縮放已自動處理；容器自己變寬時可手動呼叫）
     layout() {
-      const el = this.el, n = this.items.length || 1;
-      const cs = getComputedStyle(el), px = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      this.sw = (el.offsetWidth - px) / n;
+      const el = this.el, cs = getComputedStyle(el);
+      this.padX = parseFloat(cs.paddingLeft) || 0;
+      this.padY = parseFloat(cs.paddingTop) || 0;
+      this.pillPad = parseFloat(cs.getPropertyValue("--ltb-pill-pad")) || 12;
+      this.W = el.offsetWidth; this.H = el.offsetHeight;
+      this.sw = (this.W - 2 * this.padX) / (this.items.length || 1);
       el.style.setProperty("--ltb-sw", this.sw + "px");
-      el.style.setProperty("--ltb-dw", el.offsetWidth + "px");
+      el.style.setProperty("--ltb-dw", this.W + "px");
+      this._render();
       return this;
     }
 
     destroy() {
-      this._pill.stop();
       cancelAnimationFrame(this._raf);
       this._off.forEach(f => f());
-      this.el.classList.remove("ltb", "ltb-lift", "ltb-drag", "ltb-noind");
+      this.el.classList.remove("ltb", "ltb-noind");
+      OWN_PROPS.forEach(p => this.el.style.removeProperty(p));
       this.el.innerHTML = "";
+    }
+
+    /* ---------- 動畫 ---------- */
+
+    _center(i) { return this.padX + this.sw * (i + .5); }
+
+    _go(x, instant) {
+      const s = this._s;
+      s.tx = x;
+      if (instant || reduced()) {
+        s.x = x; s.v = 0; s.p = 0; s.pv = 0;
+        this._render();
+        return;
+      }
+      this._kick();
+    }
+
+    _kick() {
+      if (this._raf) return;
+      this._last = performance.now();
+      this._raf = requestAnimationFrame(t => this._step(t));
+    }
+
+    _step(now) {
+      const s = this._s, P = this.options.physics;
+      const dt = Math.min(.1, (now - this._last) / 1000 || .016);
+      this._last = now;
+
+      [s.x, s.v] = spring(s.x, s.v, s.tx, P.move.k, P.move.zeta, dt);
+      const far = Math.abs(s.tx - s.x) > 3 || Math.abs(s.v) > 40;
+      const up = s.down || far || now < s.hold;
+      const m = up ? P.lift : P.settle;
+      [s.p, s.pv] = spring(s.p, s.pv, up ? 1 : 0, m.k, m.zeta, dt);
+
+      this._render();
+
+      const rest = !up && Math.abs(s.tx - s.x) < .3 && Math.abs(s.v) < 2 && Math.abs(s.p) < .002 && Math.abs(s.pv) < .02;
+      if (rest) { s.x = s.tx; s.v = s.p = s.pv = 0; this._render(); this._raf = 0; return; }
+      this._raf = requestAnimationFrame(t => this._step(t));
+    }
+
+    // 把狀態換算成膠囊幾何，寫進 CSS 變數
+    _render() {
+      const s = this._s, P = this.options.physics, st = this.el.style;
+      if (!this.sw) return;
+      const p = s.p, pc = clamp(p, 0, 1), over = p - pc;        // over：落定回彈的過衝量
+      const speed = Math.abs(s.v);
+      const baseW = this.sw + this.pillPad, baseH = this.H - 2 * this.padY;
+      let w = baseW * (1 + (P.growW - 1) * pc) * (1 + over * .5)
+        + Math.min(speed * P.stretch, this.sw * P.stretchMax);
+      const h = baseH * (1 + (P.growH - 1) * pc) * (1 + over * .3)
+        / (1 + Math.min(speed / P.squash, P.squashMax));
+      // 左右夾在底板內：最左可到「最左格平常膠囊的左緣」，浮起時再往外 edge px；
+      // 太寬就收窄、靠邊時整顆往內推，所以兩端的格子放大或拉長時是往內側長
+      const lo = this.padX - this.pillPad / 2 - P.edge * pc, hi = this.W - lo;
+      w = Math.min(w, hi - lo);
+      const pl = clamp(s.x - w / 2, lo, hi - w), pt = (this.H - h) / 2;
+      st.setProperty("--ltb-pl", pl.toFixed(2) + "px");
+      st.setProperty("--ltb-pt", pt.toFixed(2) + "px");
+      st.setProperty("--ltb-pw", w.toFixed(2) + "px");
+      st.setProperty("--ltb-ph", h.toFixed(2) + "px");
+      st.setProperty("--ltb-g", Math.min(1, pc * 1.6).toFixed(3));
+      st.setProperty("--ltb-cx", s.x.toFixed(2) + "px");
+      st.setProperty("--ltb-m", (1 + (P.mag - 1) * pc).toFixed(4));
+      st.scale = `${(1 + P.barX * p).toFixed(4)} ${(1 + P.barY * p).toFixed(4)}`;
     }
 
     /* ---------- 內部 ---------- */
@@ -224,7 +244,6 @@
 
     _mark(i) {
       this._buttons().forEach((b, j) => {
-        b.classList.toggle("on", j === i);
         if (j === i) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
       });
       this.el.classList.toggle("ltb-noind", i < 0);
@@ -237,84 +256,73 @@
       this.el.dispatchEvent(new CustomEvent("ltb:" + type, { detail: { item, index: i, source } }));
     }
 
-    _bind() {
-      const el = this.el, o = this.options, pill = this._pill;
-      const on = (t, ev, f, opt) => { t.addEventListener(ev, f, opt); return () => t.removeEventListener(ev, f, opt); };
+    _choose(i, source) {
+      const s = this._s;
+      s.hold = performance.now() + this.options.physics.hold;
+      if (i === this.index && !this.el.classList.contains("ltb-noind")) {
+        this._go(this._center(i)); this._emit("reselect", i, source); return;
+      }
+      this.index = i; this._mark(i);
+      this._go(this._center(i));
+      this._emit("select", i, source);          // 錄影中頁面是點下就換，不等動畫
+    }
 
-      // 一按下膠囊就浮起成玻璃塊、移到按住的那格；按住可左右拖動，膠囊蓋到的圖示就變色，鬆手才切換
-      const put = (px, drag = true) => {
-        const s = this._st;
-        px = Math.max(0, Math.min((this.items.length - 1) * s.w, px));
-        s.k = Math.round(px / s.w);
-        pill.to(px, { drag });
+    _bind() {
+      const el = this.el, o = this.options;
+      const on = (t, ev, f, opt) => { t.addEventListener(ev, f, opt); return () => t.removeEventListener(ev, f, opt); };
+      const localX = e => {
+        const r = el.getBoundingClientRect();
+        return (e.clientX - r.left) * (this.W / r.width);    // 換算回未放大的座標
       };
-      const done = ok => {
-        const s = this._st;
-        if (!s) return;
-        this._st = null;
-        cancelAnimationFrame(this._raf);
-        this._skip = performance.now() + o.clickGuard;
-        el.classList.remove("ltb-drag");
-        const unlift = ms => setTimeout(() => { if (!this._st) el.classList.remove("ltb-lift"); }, ms);
-        if (ok && s.k !== s.cur) {
-          // 換頁：等膠囊到位才通知，緊接著收回浮起狀態，滑動、煞車、收回一氣呵成
-          const k = s.k;
-          this.index = k; this._mark(k);
-          pill.to(k * s.w);
-          pill.arrive(() => { unlift(o.liftHold); this._emit("select", k, "gesture"); }, o.arriveDistance, o.arriveTimeout);
-        } else {
-          if (s.cur >= 0) pill.to(s.cur * s.w);
-          if (ok && !s.moved) this._emit("reselect", s.k, "gesture");
-          unlift(Math.max(o.liftMin, o.liftMax - (performance.now() - s.t0)));
-        }
-      };
+      const slotAt = x => clamp(Math.floor((x - this.padX) / this.sw), 0, this.items.length - 1);
 
       this._off = [
         on(el, "pointerdown", e => {
-          const b = e.target.closest(".ltb-item");
-          if (!b || this._st) return;
-          const i = this._buttons().indexOf(b);
-          this.layout();
-          this._st = { id: e.pointerId, x0: e.clientX, i, k: -1, moved: false, w: this.sw,
-            cur: el.classList.contains("ltb-noind") ? -1 : this.index, t0: performance.now() };
+          if (this._g || !this.items.length) return;
+          const x = localX(e);
+          this._g = { id: e.pointerId, x0: x, moved: false, k: slotAt(x) };
           try { el.setPointerCapture(e.pointerId); } catch (_) {}
-          el.classList.add("ltb-lift", "ltb-drag");
-          put(i * this._st.w, false);
+          this._s.down = true;
+          this._go(this._center(this._g.k));      // 一按下就浮起並滑向按住的那格
         }),
         on(el, "pointermove", e => {
-          const s = this._st;
-          if (!s || e.pointerId !== s.id) return;
-          const x = e.clientX;
-          if (!s.moved) { if (Math.abs(x - s.x0) < o.dragThreshold) return; s.moved = true; }
-          cancelAnimationFrame(this._raf);
-          this._raf = requestAnimationFrame(() => { if (this._st) put(s.i * s.w + x - s.x0); });
+          const g = this._g;
+          if (!g || e.pointerId !== g.id) return;
+          const x = localX(e);
+          if (!g.moved) { if (Math.abs(x - g.x0) < o.dragThreshold) return; g.moved = true; }
+          const lo = this._center(0) - this.sw * o.physics.overdrag;
+          const hi = this._center(this.items.length - 1) + this.sw * o.physics.overdrag;
+          g.k = slotAt(x);
+          this._go(clamp(x, lo, hi));               // 拖動：膠囊跟手
         }),
-        on(el, "pointerup", e => { if (this._st && e.pointerId === this._st.id) done(true); }),
-        on(el, "pointercancel", e => { if (this._st && e.pointerId === this._st.id) done(false); }),
-        // 手勢已經處理過了；iPhone 的 click 會晚到，這時按鈕可能已換成別的，一律擋掉
+        on(el, "pointerup", e => {
+          const g = this._g;
+          if (!g || e.pointerId !== g.id) return;
+          this._g = null; this._s.down = false;
+          this._skip = performance.now() + o.clickGuard;
+          this._choose(g.k, "gesture");
+        }),
+        on(el, "pointercancel", e => {
+          const g = this._g;
+          if (!g || e.pointerId !== g.id) return;
+          this._g = null; this._s.down = false;
+          if (this.index >= 0) this._go(this._center(this.index));
+        }),
         on(el, "click", e => {
           if (performance.now() < this._skip) { e.stopPropagation(); e.preventDefault(); }
         }, true),
-        // 其餘的 click（鍵盤 Enter / 空白鍵、輔助技術）直接切換
+        // 鍵盤 Enter / 空白鍵、輔助技術
         on(el, "click", e => {
           const b = e.target.closest(".ltb-item");
-          if (!b) return;
-          const i = this._buttons().indexOf(b);
-          if (i === this.index && !el.classList.contains("ltb-noind")) return this._emit("reselect", i, "click");
-          this.setActive(i);
-          this._emit("select", i, "click");
+          if (b) this._choose(this._buttons().indexOf(b), "click");
         }),
-        on(window, "resize", () => {
-          this.layout();
-          if (this.index >= 0) pill.to(this.index * this.sw, { instant: true });
-        })
+        on(window, "resize", () => { this.layout(); if (this.index >= 0) this._go(this._center(this.index), true); })
       ];
-      // 分頁列自己的尺寸改變時（建立時還被隱藏、CSS 晚載入、放在會變寬的容器裡）重算並直接定位
       if (typeof ResizeObserver === "function") {
         const ro = new ResizeObserver(() => {
           const prev = this.sw;
           this.layout();
-          if (this.sw !== prev && this.index >= 0 && !this._st) pill.to(this.index * this.sw, { instant: true });
+          if (this.sw !== prev && this.index >= 0 && !this._g) this._go(this._center(this.index), true);
         });
         ro.observe(el);
         this._off.push(() => ro.disconnect());
@@ -322,9 +330,8 @@
     }
   }
 
-  LiquidTabbar.version = "1.0.1";
+  LiquidTabbar.version = "2.0.0";
   LiquidTabbar.physics = PHYSICS;
-  LiquidTabbar.Pill = Pill;   // 只要膠囊物理（自己畫畫面）時可直接用
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;
 });

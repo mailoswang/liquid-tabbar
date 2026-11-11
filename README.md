@@ -6,21 +6,26 @@
 
 Built for web apps that run in the browser or are added to the iPhone home screen, so they can match native apps. For effects that browsers can't reproduce yet, see [What browsers can't do](#what-browsers-cant-do).
 
-- **Tap to switch**: the pill lifts into clear glass and slides over. Its leading edge eases to a stop, then the trailing edge catches up, squashes into it and springs back once.
+The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of the native iOS tab bar:
+
+- **Press**: the dark pill fades into clear glass about 1.3× larger, rising past the top and bottom of the bar, while the whole bar grows by 3–5%.
+- **Slide**: a spring carries the pill to its target. It stretches with speed and flattens slightly.
+- **Refraction**: the recolored icons under the glass are magnified about 1.2× around the pill's center.
+- **Settle**: once in place it shrinks back into the dark pill, overshooting its size and springing back once.
 - **Press and drag**: the pill follows your finger and recolors the icons it covers. The tab switches when you let go.
-- **Waits for the pill**: you are told to change pages only after the pill arrives, so rebuilding the page doesn't stutter the animation.
-- **Configurable**: tab count, icons, labels, colors, sizes and spring feel.
+- **Instant switch**: `onSelect` fires the moment you let go, just like iOS. The animation keeps playing while your page changes.
+- **Configurable**: tab count, icons, labels, colors, sizes and motion.
 
 **[Live demo](https://mailoswang.github.io/liquid-tabbar/)**
 
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins a version (`@v1.0.1`), so later releases won't change your project unexpectedly. You can also copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
+The URL pins a version (`@v2.0.0`), so later releases won't change your project unexpectedly. You can also copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
 
 ## Quick start
 
@@ -32,8 +37,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -92,12 +97,14 @@ addEventListener("hashchange", () => {
 
 For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 
+`onSelect` fires the moment the finger lifts, while the pill is still animating. If your page is expensive to render and the animation stutters, delay the render by a frame or two (e.g. `requestAnimationFrame(() => render())`).
+
 ## ES modules and frameworks
 
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v1.0.1/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -123,14 +130,10 @@ function Tabs({ items, active, onSelect }) {
 |---|---|---|
 | `items` | `[]` | `[{ id, label, icon }]`. The array length is the number of tabs |
 | `active` | `0` | Selected `id` or index. `null` / `-1` selects nothing and hides the pill |
-| `onSelect(item, index, info)` | — | A different tab was chosen. For gestures it fires after the pill arrives; for keyboard it fires immediately. `info.source` is `"gesture"` or `"click"` |
+| `onSelect(item, index, info)` | — | A different tab was chosen. Fires the moment the finger lifts (or immediately for keyboard). `info.source` is `"gesture"` or `"click"` |
 | `onReselect(item, index, info)` | — | The already-selected tab was tapped (often used to scroll to top) |
-| `physics` | see below | Spring feel; pass only the fields you want to change |
-| `arriveDistance` | `6` | How close (px) the pill must be to count as arrived |
-| `arriveTimeout` | `320` | Longest wait (ms) for the pill before `onSelect` fires anyway |
-| `liftHold` | `120` | Delay (ms) after arrival before the lifted glass settles back |
-| `liftMin` / `liftMax` | `60` / `180` | Shortest / longest (ms) the lifted state is kept when no tab changes |
-| `dragThreshold` | `6` | How far (px) the finger must move to count as a drag |
+| `physics` | see below | Motion settings; pass only the fields you want to change |
+| `dragThreshold` | `8` | How far (px) the finger must move to count as a drag |
 | `clickGuard` | `800` | How long (ms) to swallow late clicks after a gesture (iOS sends clicks late) |
 
 You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.detail.item)` and `"ltb:reselect"`.
@@ -139,7 +142,7 @@ You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.d
 
 ```js
 tabs.set({ items, active })          // update items and selection together
-tabs.setItems(items)                 // replace items; with the same count only changed tabs update, so the pill keeps sliding
+tabs.setItems(items)                 // replace items; with the same count only changed tabs are rebuilt
 tabs.setActive("search")             // or an index; { instant: true } skips the animation
 tabs.setActive(null)                 // hide the pill
 tabs.layout()                        // recompute sizes by hand (rarely needed; size changes are handled automatically)
@@ -170,9 +173,9 @@ Override the variables on `.ltb` in your CSS (or set them in the element's `styl
 | `--ltb-width` / `--ltb-height` / `--ltb-pad-x` / `--ltb-pad-y` | Size |
 | `--ltb-bottom` / `--ltb-z` | Position (defaults to where the native iOS tab bar sits) and stacking order |
 | `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | Icons and labels |
-| `--ltb-pill-pad` | How much wider the pill is than one tab |
-| `--ltb-lift-w` / `--ltb-lift-h` / `--ltb-lift-scale` | How much the pill widens and grows taller, and how much the whole bar scales, while pressed |
-| `--ltb-ease` / `--ltb-press` / `--ltb-release` | Easing and duration for lifting and settling |
+| `--ltb-pill-pad` | How much wider the resting pill is than one tab |
+
+Sizes and timing of the animation itself are set through `physics` (below).
 
 To place the bar inside the page instead of fixing it to the bottom, override `position`, `left`, `translate` and `bottom`, e.g. `.ltb { position: relative; left: auto; translate: none; bottom: auto }`.
 
@@ -181,30 +184,29 @@ To place the bar inside the page instead of fixing it to the bottom, override `p
 ```js
 new LiquidTabbar("#tabs", {
   physics: {
-    tap:  { C: 40 },   // tap: stronger squash
-    drag: { S: 30 }    // drag: stronger stretch
+    growW: 1.2,                     // smaller glass while pressed
+    settle: { k: 260, zeta: .7 }    // calmer settle, less bounce
   }
 });
 ```
 
-| Field | Tap `tap` | Drag `drag` | Description |
-|---|---|---|---|
-| `k` / `c` | 420 / 41 | 1400 / 70 | Leading-edge spring stiffness / damping. `c = 2√k` is critical damping: no overshoot, it stops exactly on target |
-| `kt` / `ct` | 200 / 12 | 220 / 13 | Spring pulling the trailing edge after the leading edge. Less damping means more stretch on take-off and a harder squash on stop |
-| `S` | 16 | 24 | Maximum stretch (px) |
-| `C` | 32 | 24 | Maximum squash (px) |
-| `bulge` | .0013 | .002 | Vertical bulge per 1px of squash |
+Springs take a stiffness `k` and a damping ratio `zeta` (1 = no overshoot, lower = more bounce).
 
-If you only want the pill physics and draw everything yourself, use `LiquidTabbar.Pill`:
+| Field | Default | Description |
+|---|---|---|
+| `move` | `{ k: 420, zeta: .82 }` | Spring that moves the pill (slight overshoot) |
+| `lift` | `{ k: 900, zeta: .90 }` | Lifting into glass on press: fast, almost no overshoot |
+| `settle` | `{ k: 260, zeta: .46 }` | Shrinking back after arrival: slower, one visible bounce |
+| `growW` / `growH` | `1.3` / `1.33` | How much wider / taller the glass gets while pressed |
+| `mag` | `1.2` | Magnification of the icons under the glass |
+| `stretch` / `stretchMax` | `.065` / `1.4` | Extra width per 1 px/s of speed / maximum stretch (in tab widths) |
+| `squash` / `squashMax` | `9000` / `.14` | How much speed flattens the pill (smaller = flatter) / maximum flattening |
+| `barX` / `barY` | `.035` / `.05` | How much the whole bar grows horizontally / vertically while pressed |
+| `hold` | `120` | Minimum time (ms) the glass stays lifted after release |
+| `overdrag` | `.12` | How far (in tab widths) the pill can be dragged past the first and last tabs |
+| `edge` | `9` | How far (px) the lifted glass may extend past the left and right ends of the bar. At rest the pill never leaves the bar; at the first and last tabs it grows inward |
 
-```js
-const pill = LiquidTabbar.Pill((x, cmp, sy) => {
-  // x: position, cmp: width reduction (negative = stretched), sy: vertical scale
-}, LiquidTabbar.physics);
-pill.to(200);                    // slide to 200px
-pill.to(120, { drag: true });    // drag mode (follows the finger)
-pill.arrive(() => {}, 6, 320);   // call back on arrival (or after the timeout)
-```
+`LiquidTabbar.physics` holds the defaults.
 
 ## Browser support
 
@@ -228,6 +230,11 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.0.0**: New motion based on recordings of the native iOS tab bar: the glass grows past the bar, the icons underneath are magnified, the whole bar scales while pressed, and the pill bounces once as it settles. `onSelect` now fires the moment the finger lifts instead of after the pill arrives. Breaking changes:
+  - New `physics` fields (see [Physics](#physics)); the `tap` / `drag` groups are gone.
+  - Removed options: `arriveDistance`, `arriveTimeout`, `liftHold`, `liftMin`, `liftMax`.
+  - Removed CSS variables: `--ltb-lift-w`, `--ltb-lift-h`, `--ltb-lift-scale`, `--ltb-ease`, `--ltb-press`, `--ltb-release`.
+  - Removed `LiquidTabbar.Pill`, and the `on` class on the selected button (use `[aria-current="page"]`).
 - **v1.0.1**: If the bar was created while it couldn't be seen yet (e.g. hidden, or before the CSS loaded), the pill sat in the wrong place once shown. Size changes are now picked up automatically.
 - **v1.0.0**: First release.
 
