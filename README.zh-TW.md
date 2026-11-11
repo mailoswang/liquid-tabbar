@@ -21,11 +21,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定版本號（`@v2.0.0`），之後函式庫更新也不會突然改變你的專案。也可以直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
+網址裡固定版本號（`@v2.1.0`），之後函式庫更新也不會突然改變你的專案。也可以直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
 
 ## 快速開始
 
@@ -37,8 +37,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -97,14 +97,14 @@ addEventListener("hashchange", () => {
 
 某些頁面不屬於任何分頁時，用 `tabs.setActive(null)` 隱藏膠囊。
 
-`onSelect` 在手指放開的瞬間就呼叫，這時膠囊還在動畫中。如果你的頁面渲染很重、讓動畫卡頓，可以把渲染延後一兩個畫面（例如 `requestAnimationFrame(() => render())`）。
+`onSelect` 在手指放開的瞬間就呼叫，這時膠囊還在動畫中。如果你的頁面渲染很重、讓動畫卡頓，設定 `waitForPill: true`，`onSelect` 就會等膠囊滑到位才呼叫。
 
 ## ES module 與框架
 
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -135,6 +135,8 @@ function Tabs({ items, active, onSelect }) {
 | `physics` | 見下方 | 動畫參數，只需要傳想改的欄位 |
 | `dragThreshold` | `8` | 手指移動幾 px 才算拖動 |
 | `clickGuard` | `800` | 手勢後擋掉晚到的 click 多久（ms），iOS 會晚送 click |
+| `waitForPill` | `false` | 手勢換頁時，等膠囊滑到位才呼叫 `onSelect`。換頁很吃效能、讓動畫起步卡住時打開 |
+| `arriveDistance` / `arriveTimeout` | `6` / `320` | 搭配 `waitForPill`：膠囊離目標幾 px 內算到位 / 最多等多久（ms） |
 
 也可以監聽事件：`tabs.el.addEventListener("ltb:select", e => e.detail.item)`、`"ltb:reselect"`。
 
@@ -230,6 +232,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.1.0**：新增 `waitForPill` 選項（搭配 `arriveDistance` / `arriveTimeout`），可以等膠囊到位才呼叫 `onSelect`；樣式只在數值改變時才寫入，減少手機上每一格的樣式計算。
 - **v2.0.0**：依 iOS 原生分頁列的錄影重新做動畫：按住時玻璃超出底板、底下圖示放大、整條分頁列微微放大，落定時回彈一次。`onSelect` 改成放開瞬間呼叫，不再等膠囊到位。不相容的變更：
   - `physics` 換成新欄位（見[動畫參數](#動畫參數physics)），原本的 `tap` / `drag` 兩組已移除
   - 移除選項：`arriveDistance`、`arriveTimeout`、`liftHold`、`liftMin`、`liftMax`

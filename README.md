@@ -21,11 +21,11 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins a version (`@v2.0.0`), so later releases won't change your project unexpectedly. You can also copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
+The URL pins a version (`@v2.1.0`), so later releases won't change your project unexpectedly. You can also copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
 
 ## Quick start
 
@@ -37,8 +37,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -97,14 +97,14 @@ addEventListener("hashchange", () => {
 
 For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 
-`onSelect` fires the moment the finger lifts, while the pill is still animating. If your page is expensive to render and the animation stutters, delay the render by a frame or two (e.g. `requestAnimationFrame(() => render())`).
+`onSelect` fires the moment the finger lifts, while the pill is still animating. If your page is expensive to render and the animation stutters, set `waitForPill: true` so `onSelect` waits until the pill has slid into place.
 
 ## ES modules and frameworks
 
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.0.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -135,6 +135,8 @@ function Tabs({ items, active, onSelect }) {
 | `physics` | see below | Motion settings; pass only the fields you want to change |
 | `dragThreshold` | `8` | How far (px) the finger must move to count as a drag |
 | `clickGuard` | `800` | How long (ms) to swallow late clicks after a gesture (iOS sends clicks late) |
+| `waitForPill` | `false` | For gestures, call `onSelect` only once the pill has slid into place. Turn it on if switching pages is expensive and makes the start of the animation stutter |
+| `arriveDistance` / `arriveTimeout` | `6` / `320` | With `waitForPill`: how close (px) counts as arrived / longest wait (ms) |
 
 You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.detail.item)` and `"ltb:reselect"`.
 
@@ -230,6 +232,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.1.0**: New `waitForPill` option (with `arriveDistance` / `arriveTimeout`) to call `onSelect` after the pill arrives. Styles are written only when they change, which cuts per-frame style work on phones.
 - **v2.0.0**: New motion based on recordings of the native iOS tab bar: the glass grows past the bar, the icons underneath are magnified, the whole bar scales while pressed, and the pill bounces once as it settles. `onSelect` now fires the moment the finger lifts instead of after the pill arrives. Breaking changes:
   - New `physics` fields (see [Physics](#physics)); the `tap` / `drag` groups are gone.
   - Removed options: `arriveDistance`, `arriveTimeout`, `liftHold`, `liftMin`, `liftMax`.

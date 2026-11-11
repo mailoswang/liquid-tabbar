@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.0.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.1.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -6,7 +6,7 @@
  *   ③ 折射：玻璃下的變色圖示以膠囊中心放大約 1.2 倍
  *   ④ 落定：到位後縮回深色膠囊，尺寸略過衝再回彈
  *   左右兩端：膠囊不超出底板（浮起時最多外擴 edge px），在最左／最右格放大時往內側長
- *   ⑤ 換頁：放開瞬間就通知，不等動畫
+ *   ⑤ 換頁：放開瞬間就通知，不等動畫（頁面渲染很重時可開 waitForPill，等膠囊到位再通知）
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -42,7 +42,10 @@
     onReselect: null,    // (item, index, info) 點了已選中的那格
     physics: PHYSICS,
     dragThreshold: 8,    // 手指移動超過幾 px 才算拖動
-    clickGuard: 800      // 手勢結束後擋掉多久內晚到的 click（iOS 會晚送）
+    clickGuard: 800,     // 手勢結束後擋掉多久內晚到的 click（iOS 會晚送）
+    waitForPill: false,  // true：手勢換頁時等膠囊滑到位才呼叫 onSelect（換頁很吃效能時，動畫才不會在起步時卡住）
+    arriveDistance: 6,   // waitForPill：膠囊離目標幾 px 內算到位
+    arriveTimeout: 320   // waitForPill：最多等多久（ms）
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
@@ -86,6 +89,8 @@
       this._last = 0;
       this._skip = 0;
       this._placed = false;
+      this._pend = null;   // waitForPill：等膠囊到位才送出的 onSelect
+      this._css = {};      // 上一次寫入的樣式值，沒變就不重寫
 
       el.classList.add("ltb");
       el.innerHTML = '<span class="ltb-ind" aria-hidden="true"></span><span class="ltb-lens" aria-hidden="true"></span>' +
@@ -161,7 +166,9 @@
 
     destroy() {
       cancelAnimationFrame(this._raf);
+      if (this._pend) clearTimeout(this._pend.timer);
       this._off.forEach(f => f());
+      this._css = {};
       this.el.classList.remove("ltb", "ltb-noind");
       OWN_PROPS.forEach(p => this.el.style.removeProperty(p));
       this.el.innerHTML = "";
@@ -177,6 +184,7 @@
       if (instant || reduced()) {
         s.x = x; s.v = 0; s.p = 0; s.pv = 0;
         this._render();
+        this._flush();
         return;
       }
       this._kick();
@@ -200,6 +208,7 @@
       [s.p, s.pv] = spring(s.p, s.pv, up ? 1 : 0, m.k, m.zeta, dt);
 
       this._render();
+      if (this._pend && Math.abs(s.tx - s.x) < this.options.arriveDistance) this._flush();
 
       const rest = !up && Math.abs(s.tx - s.x) < .3 && Math.abs(s.v) < 2 && Math.abs(s.p) < .002 && Math.abs(s.pv) < .02;
       if (rest) { s.x = s.tx; s.v = s.p = s.pv = 0; this._render(); this._raf = 0; return; }
@@ -222,14 +231,16 @@
       const lo = this.padX - this.pillPad / 2 - P.edge * pc, hi = this.W - lo;
       w = Math.min(w, hi - lo);
       const pl = clamp(s.x - w / 2, lo, hi - w), pt = (this.H - h) / 2;
-      st.setProperty("--ltb-pl", pl.toFixed(2) + "px");
-      st.setProperty("--ltb-pt", pt.toFixed(2) + "px");
-      st.setProperty("--ltb-pw", w.toFixed(2) + "px");
-      st.setProperty("--ltb-ph", h.toFixed(2) + "px");
-      st.setProperty("--ltb-g", Math.min(1, pc * 1.6).toFixed(3));
-      st.setProperty("--ltb-cx", s.x.toFixed(2) + "px");
-      st.setProperty("--ltb-m", (1 + (P.mag - 1) * pc).toFixed(4));
-      st.scale = `${(1 + P.barX * p).toFixed(4)} ${(1 + P.barY * p).toFixed(4)}`;
+      // 只寫有變的值：每次寫入都會讓瀏覽器重算整條分頁列的樣式，手機上很明顯
+      const c = this._css, put = (k, v) => { if (c[k] !== v) { c[k] = v; st.setProperty(k, v); } };
+      put("--ltb-pl", pl.toFixed(2) + "px");
+      put("--ltb-pt", pt.toFixed(2) + "px");
+      put("--ltb-pw", w.toFixed(2) + "px");
+      put("--ltb-ph", h.toFixed(2) + "px");
+      put("--ltb-g", Math.min(1, pc * 1.6).toFixed(3));
+      put("--ltb-cx", s.x.toFixed(2) + "px");
+      put("--ltb-m", (1 + (P.mag - 1) * pc).toFixed(4));
+      put("scale", `${(1 + P.barX * p).toFixed(4)} ${(1 + P.barY * p).toFixed(4)}`);
     }
 
     /* ---------- 內部 ---------- */
@@ -263,8 +274,23 @@
         this._go(this._center(i)); this._emit("reselect", i, source); return;
       }
       this.index = i; this._mark(i);
+      if (this._pend) { clearTimeout(this._pend.timer); this._pend = null; }   // 連點時只送最後一次
+      if (source === "gesture" && this.options.waitForPill) {
+        this._pend = { i, source, timer: setTimeout(() => this._flush(), this.options.arriveTimeout) };
+        this._go(this._center(i));
+        if (!this._raf) this._flush();
+        return;
+      }
       this._go(this._center(i));
       this._emit("select", i, source);          // 錄影中頁面是點下就換，不等動畫
+    }
+
+    // 送出等待中的 onSelect（膠囊到位、逾時或直接定位時）
+    _flush() {
+      const q = this._pend;
+      if (!q) return;
+      this._pend = null; clearTimeout(q.timer);
+      this._emit("select", q.i, q.source);
     }
 
     _bind() {
@@ -330,7 +356,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.0.0";
+  LiquidTabbar.version = "2.1.0";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;
