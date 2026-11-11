@@ -13,10 +13,12 @@
 - **折射**：玻璃下的變色圖示以膠囊中心放大約 1.2 倍
 - **落定**：到位後縮回深色膠囊，尺寸略過衝再回彈一次
 - **按住拖動**：膠囊跟著手指，蓋到的圖示即時變色，鬆手才切換
-- **立即換頁**：放開的瞬間就呼叫 `onSelect`，跟 iOS 一樣；頁面切換時動畫繼續播完
+- **立即換頁**：放開的瞬間就呼叫 `onSelect`，跟 iOS 一樣，頁面切換時動畫繼續播完；頁面很重時也可以改成等膠囊到位（`waitForPill`）
 - 格數、圖示、文字、顏色、尺寸、動畫都可以調整
 
-**[線上示範](https://mailoswang.github.io/liquid-tabbar/)**
+**[線上示範](https://mailoswang.github.io/liquid-tabbar/)**（建議用手機開，按住分頁列左右拖動試試）
+
+**目錄**：[安裝](#安裝) · [快速開始](#快速開始) · [依專案客製](#依專案客製) · [放進頁面時要注意](#放進頁面時要注意) · [配合路由](#配合路由) · [框架](#es-module-與框架) · [選項](#選項) · [方法](#方法) · [外觀變數](#外觀變數) · [樣式掛鉤](#樣式掛鉤) · [動畫參數](#動畫參數physics) · [效能](#效能) · [相容性](#相容性) · [限制](#網頁做不到的效果) · [版本紀錄](#版本紀錄)
 
 ## 安裝
 
@@ -25,7 +27,12 @@
 <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定版本號（`@v2.1.0`），之後函式庫更新也不會突然改變你的專案。也可以直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
+網址裡固定完整版本號（`@v2.1.0`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+
+- `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
+- 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
+
+主版本號改變（2 → 3）時選項可能會變，升級前請先看[版本紀錄](#版本紀錄)。
 
 ## 快速開始
 
@@ -75,6 +82,33 @@
 
 `icon` 可以給 24×24 viewBox 內的路徑（會用 `fill="currentColor"` 包成 `<svg>`），也可以直接給完整的 `<svg>`。
 
+## 依專案客製
+
+各專案通常不同的部分（格數、圖示、文字、顏色、深淺色、動畫）都在同一處設定，互動邏輯與動畫則共用。例如五格只有圖示、淺色外觀、藍色強調色、動畫比較收斂：
+
+```html
+<nav id="tabs" class="ltb--light" aria-label="主要導覽"></nav>
+
+<style>
+  #tabs { --ltb-accent: #0a84ff; --ltb-icon: 26px }
+</style>
+
+<script>
+  const tabs = new LiquidTabbar("#tabs", {
+    items: [                                   // 五個項目＝五格
+      { id: "home",   icon: ICONS.home },      // 不給 label 就只顯示圖示
+      { id: "search", icon: ICONS.search },
+      { id: "likes",  icon: ICONS.heart },
+      { id: "inbox",  icon: ICONS.bell },
+      { id: "me",     icon: ICONS.user }
+    ],
+    physics: { growW: 1.2, mag: 1.1, settle: { k: 260, zeta: .7 } }
+  });
+</script>
+```
+
+只有圖示的按鈕會用 `id` 當無障礙名稱，`id` 請取看得懂的名字（或保留 `label`）。
+
 ## 放進頁面時要注意
 
 - **底部留空間**：分頁列預設固定在畫面底部，會蓋住頁面最下面的內容。替內容加上底部留白，例如 `padding-bottom: calc(110px + env(safe-area-inset-bottom))`。
@@ -97,7 +131,7 @@ addEventListener("hashchange", () => {
 
 某些頁面不屬於任何分頁時，用 `tabs.setActive(null)` 隱藏膠囊。
 
-`onSelect` 在手指放開的瞬間就呼叫，這時膠囊還在動畫中。如果你的頁面渲染很重、讓動畫卡頓，設定 `waitForPill: true`，`onSelect` 就會等膠囊滑到位才呼叫。
+`onSelect` 在手指放開的瞬間就呼叫，這時膠囊還在動畫中。如果你的頁面渲染很重、讓動畫卡頓，請見[效能](#效能)。
 
 ## ES module 與框架
 
@@ -181,6 +215,26 @@ tabs.items                           // 目前的項目
 
 想把分頁列放在頁面裡而不是固定在底部，覆寫 `position`、`left`、`translate`、`bottom` 即可，例如 `.ltb { position: relative; left: auto; translate: none; bottom: auto }`。
 
+## 樣式掛鉤
+
+| 選擇器 | 對應 |
+|---|---|
+| `.ltb` | 分頁列（你傳進去的元素） |
+| `.ltb-item[data-id="inbox"]` | 某一格的按鈕，依項目的 `id` |
+| `.ltb-item[aria-current="page"]` | 選中那格的按鈕 |
+| `.ltb.ltb-noind` | 都沒有選中時的分頁列 |
+
+例如在某一格加上提示紅點：
+
+```css
+.ltb-item[data-id="inbox"]::after {
+  content: ""; position: absolute; top: 8px; right: calc(50% - 18px);
+  width: 7px; height: 7px; border-radius: 50%; background: #ff3b30;
+}
+```
+
+加在按鈕上的東西，在膠囊蓋到那一格時會被遮住，因為膠囊裡的變色複本只有圖示和文字。
+
 ## 動畫參數（physics）
 
 ```js
@@ -210,6 +264,13 @@ new LiquidTabbar("#tabs", {
 
 預設值在 `LiquidTabbar.physics`。
 
+## 效能
+
+動畫本身很輕，但有兩件事可能讓手機上的動畫卡頓：
+
+- **膠囊移動時重畫很重的頁面**：`onSelect` 在放開的瞬間就呼叫，你的頁面會在膠囊還在滑的時候重建。設定 `waitForPill: true`，就會等膠囊滑到位（約 0.1–0.3 秒）才呼叫 `onSelect`。
+- **縮放帶模糊的分頁列**：按住時整條分頁列會微微放大，而帶 `backdrop-filter` 的元素每一格換尺寸重畫可能很吃效能。設定 `physics: { barX: 0, barY: 0 }` 讓分頁列不縮放，或用 `--ltb-blur: none` 拿掉模糊。
+
 ## 相容性
 
 Safari / iOS 16.4+、Chrome 120+、Firefox 128+（用到 `@property`、`mask-composite`、`clamp()`）。開啟「減少動態效果」時直接定位不播動畫；開啟「降低透明度」時取消背景模糊。
@@ -235,7 +296,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 - **v2.1.0**：新增 `waitForPill` 選項（搭配 `arriveDistance` / `arriveTimeout`），可以等膠囊到位才呼叫 `onSelect`；樣式只在數值改變時才寫入，減少手機上每一格的樣式計算。
 - **v2.0.0**：依 iOS 原生分頁列的錄影重新做動畫：按住時玻璃超出底板、底下圖示放大、整條分頁列微微放大，落定時回彈一次。`onSelect` 改成放開瞬間呼叫，不再等膠囊到位。不相容的變更：
   - `physics` 換成新欄位（見[動畫參數](#動畫參數physics)），原本的 `tap` / `drag` 兩組已移除
-  - 移除選項：`arriveDistance`、`arriveTimeout`、`liftHold`、`liftMin`、`liftMax`
+  - 移除選項：`liftHold`、`liftMin`、`liftMax`，以及 `arriveDistance`、`arriveTimeout`（v2.1.0 隨 `waitForPill` 加回）
   - 移除 CSS 變數：`--ltb-lift-w`、`--ltb-lift-h`、`--ltb-lift-scale`、`--ltb-ease`、`--ltb-press`、`--ltb-release`
   - 移除 `LiquidTabbar.Pill`，以及選中按鈕上的 `on` class（請改用 `[aria-current="page"]`）
 - **v1.0.1**：分頁列建立時還看不到（例如被隱藏、CSS 晚載入）時，顯示後膠囊會停在錯的位置；現在尺寸一改變就自動重算。

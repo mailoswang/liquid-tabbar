@@ -13,10 +13,12 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 - **Refraction**: the recolored icons under the glass are magnified about 1.2× around the pill's center.
 - **Settle**: once in place it shrinks back into the dark pill, overshooting its size and springing back once.
 - **Press and drag**: the pill follows your finger and recolors the icons it covers. The tab switches when you let go.
-- **Instant switch**: `onSelect` fires the moment you let go, just like iOS. The animation keeps playing while your page changes.
+- **Instant switch**: `onSelect` fires the moment you let go, just like iOS, and the animation keeps playing while your page changes. Heavy pages can wait for the pill instead (`waitForPill`).
 - **Configurable**: tab count, icons, labels, colors, sizes and motion.
 
-**[Live demo](https://mailoswang.github.io/liquid-tabbar/)**
+**[Live demo](https://mailoswang.github.io/liquid-tabbar/)** (open it on a phone and press and drag the bar)
+
+**Contents**: [Install](#install) · [Quick start](#quick-start) · [Customizing](#customizing-for-your-project) · [Page setup](#page-setup) · [Routing](#routing) · [Frameworks](#es-modules-and-frameworks) · [Options](#options) · [Methods](#methods) · [CSS variables](#css-variables) · [Styling hooks](#styling-hooks) · [Physics](#physics) · [Performance](#performance) · [Browser support](#browser-support) · [Limitations](#what-browsers-cant-do) · [Changelog](#changelog)
 
 ## Install
 
@@ -25,7 +27,12 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.1.0/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins a version (`@v2.1.0`), so later releases won't change your project unexpectedly. You can also copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
+The URL pins an exact version (`@v2.1.0`), so later releases never change your project unexpectedly. Other choices:
+
+- `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
+- Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
+
+Major versions (2 → 3) can change options; check the [Changelog](#changelog) before upgrading.
 
 ## Quick start
 
@@ -75,6 +82,33 @@ Save this as an `.html` file and open it:
 
 `icon` is either path markup for a 24×24 viewBox (wrapped in an `<svg>` with `fill="currentColor"`) or a complete `<svg>` element.
 
+## Customizing for your project
+
+Everything that usually differs between projects (tab count, icons, labels, colors, theme, motion) is set in one place, while the interaction and animation stay shared. For example, five icon-only tabs on a light theme with a blue accent and a calmer animation:
+
+```html
+<nav id="tabs" class="ltb--light" aria-label="Main"></nav>
+
+<style>
+  #tabs { --ltb-accent: #0a84ff; --ltb-icon: 26px }
+</style>
+
+<script>
+  const tabs = new LiquidTabbar("#tabs", {
+    items: [                                   // five items = five tabs
+      { id: "home",   icon: ICONS.home },      // leave out label for icon-only tabs
+      { id: "search", icon: ICONS.search },
+      { id: "likes",  icon: ICONS.heart },
+      { id: "inbox",  icon: ICONS.bell },
+      { id: "me",     icon: ICONS.user }
+    ],
+    physics: { growW: 1.2, mag: 1.1, settle: { k: 260, zeta: .7 } }
+  });
+</script>
+```
+
+Icon-only buttons use the `id` as their accessible name, so pick readable ids (or keep a `label`).
+
 ## Page setup
 
 - **Leave room at the bottom.** The bar is fixed to the bottom of the screen by default and covers whatever is underneath. Give your content bottom padding, e.g. `padding-bottom: calc(110px + env(safe-area-inset-bottom))`.
@@ -97,7 +131,7 @@ addEventListener("hashchange", () => {
 
 For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 
-`onSelect` fires the moment the finger lifts, while the pill is still animating. If your page is expensive to render and the animation stutters, set `waitForPill: true` so `onSelect` waits until the pill has slid into place.
+`onSelect` fires the moment the finger lifts, while the pill is still animating. If your page is expensive to render and the animation stutters, see [Performance](#performance).
 
 ## ES modules and frameworks
 
@@ -181,6 +215,26 @@ Sizes and timing of the animation itself are set through `physics` (below).
 
 To place the bar inside the page instead of fixing it to the bottom, override `position`, `left`, `translate` and `bottom`, e.g. `.ltb { position: relative; left: auto; translate: none; bottom: auto }`.
 
+## Styling hooks
+
+| Selector | Matches |
+|---|---|
+| `.ltb` | The bar (the element you passed in) |
+| `.ltb-item[data-id="inbox"]` | One tab's button, by item `id` |
+| `.ltb-item[aria-current="page"]` | The selected tab's button |
+| `.ltb.ltb-noind` | The bar while nothing is selected |
+
+For example, a badge dot on one tab:
+
+```css
+.ltb-item[data-id="inbox"]::after {
+  content: ""; position: absolute; top: 8px; right: calc(50% - 18px);
+  width: 7px; height: 7px; border-radius: 50%; background: #ff3b30;
+}
+```
+
+Anything you add to a button is hidden while the pill covers that tab, because the colored copy under the pill only contains the icon and label.
+
 ## Physics
 
 ```js
@@ -210,6 +264,13 @@ Springs take a stiffness `k` and a damping ratio `zeta` (1 = no overshoot, lower
 
 `LiquidTabbar.physics` holds the defaults.
 
+## Performance
+
+The animation itself is light, but two things can make it stutter on phones:
+
+- **Rendering a heavy page while the pill moves.** `onSelect` fires the moment the finger lifts, so your page rebuilds while the pill is still sliding. Set `waitForPill: true` to call `onSelect` once the pill has slid into place (taking about 0.1–0.3 s).
+- **Scaling the blurred bar.** While pressed, the whole bar grows slightly, and a bar with `backdrop-filter` can be expensive to redraw at a new size every frame. Set `physics: { barX: 0, barY: 0 }` to keep the bar still, or `--ltb-blur: none` to drop the blur.
+
 ## Browser support
 
 Safari / iOS 16.4+, Chrome 120+ and Firefox 128+ (uses `@property`, `mask-composite` and `clamp()`). With "Reduce Motion" on, the pill jumps into place without animating. With "Reduce Transparency" on, the background blur is turned off.
@@ -235,7 +296,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 - **v2.1.0**: New `waitForPill` option (with `arriveDistance` / `arriveTimeout`) to call `onSelect` after the pill arrives. Styles are written only when they change, which cuts per-frame style work on phones.
 - **v2.0.0**: New motion based on recordings of the native iOS tab bar: the glass grows past the bar, the icons underneath are magnified, the whole bar scales while pressed, and the pill bounces once as it settles. `onSelect` now fires the moment the finger lifts instead of after the pill arrives. Breaking changes:
   - New `physics` fields (see [Physics](#physics)); the `tap` / `drag` groups are gone.
-  - Removed options: `arriveDistance`, `arriveTimeout`, `liftHold`, `liftMin`, `liftMax`.
+  - Removed options: `liftHold`, `liftMin`, `liftMax`, plus `arriveDistance` and `arriveTimeout` (brought back in v2.1.0 together with `waitForPill`).
   - Removed CSS variables: `--ltb-lift-w`, `--ltb-lift-h`, `--ltb-lift-scale`, `--ltb-ease`, `--ltb-press`, `--ltb-release`.
   - Removed `LiquidTabbar.Pill`, and the `on` class on the selected button (use `[aria-current="page"]`).
 - **v1.0.1**: If the bar was created while it couldn't be seen yet (e.g. hidden, or before the CSS loaded), the pill sat in the wrong place once shown. Size changes are now picked up automatically.
