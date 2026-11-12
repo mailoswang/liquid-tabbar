@@ -1,9 +1,10 @@
-/*! liquid-tabbar v2.1.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.3.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
  *   ② 滑行：位置由彈簧追向目標，寬度隨速度拉長、高度略壓扁
- *   ③ 折射：玻璃下的變色圖示以膠囊中心放大約 1.2 倍
+ *   ③ 透鏡：膠囊範圍內的底板看起來微微縮小：上下緣正中間各開一塊月牙，透出背後的頁面；
+ *      玻璃下的變色圖示與文字不縮小，跟著整條底板一起放大
  *   ④ 落定：到位後縮回深色膠囊，尺寸略過衝再回彈
  *   左右兩端：膠囊不超出底板（浮起時最多外擴 edge px），在最左／最右格放大時往內側長
  *   ⑤ 換頁：放開瞬間就通知，不等動畫（頁面渲染很重時可開 waitForPill，等膠囊到位再通知）
@@ -23,7 +24,8 @@
     settle: { k: 260, zeta: .46 },  // 落定：較慢、明顯回彈一次（錄影 250–500 ms）
     growW: 1.3,      // 浮起時膠囊變寬倍率
     growH: 1.33,     // 浮起時膠囊變高倍率（超出底板上下緣）
-    mag: 1.2,        // 玻璃下圖示放大倍率
+    mag: 1,          // 玻璃下圖示縮放倍率（1：跟著底板一起放大；>1 再放大、<1 縮小）
+    shrink: .86,     // 玻璃裡底板看起來縮小多少（決定上下兩塊月牙的深度；1 為沒有）
     stretch: .065,   // 每 1 px/s 速度拉長幾 px
     stretchMax: 1.4, // 拉長上限（以一格寬為單位）
     squash: 9000,    // 速度造成高度壓扁的分母（越小越扁）
@@ -49,7 +51,7 @@
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
-  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "scale"];
+  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-bs", "scale"];
 
   const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -93,7 +95,7 @@
       this._css = {};      // 上一次寫入的樣式值，沒變就不重寫
 
       el.classList.add("ltb");
-      el.innerHTML = '<span class="ltb-ind" aria-hidden="true"></span><span class="ltb-lens" aria-hidden="true"></span>' +
+      el.innerHTML = '<span class="ltb-bg" aria-hidden="true"></span><span class="ltb-ind" aria-hidden="true"></span><span class="ltb-lens" aria-hidden="true"><span class="ltb-bar"></span></span>' +
         '<span class="ltb-clip" aria-hidden="true"><span class="ltb-copy"></span></span>';
       this._copy = el.querySelector(".ltb-copy");
       this._clip = el.querySelector(".ltb-clip");
@@ -240,6 +242,7 @@
       put("--ltb-g", Math.min(1, pc * 1.6).toFixed(3));
       put("--ltb-cx", s.x.toFixed(2) + "px");
       put("--ltb-m", (1 + (P.mag - 1) * pc).toFixed(4));
+      put("--ltb-bs", (1 + (P.shrink - 1) * pc).toFixed(4));
       put("scale", `${(1 + P.barX * p).toFixed(4)} ${(1 + P.barY * p).toFixed(4)}`);
     }
 
@@ -356,7 +359,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.1.0";
+  LiquidTabbar.version = "2.3.0";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;
