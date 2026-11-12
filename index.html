@@ -28,12 +28,13 @@
 <body>
 <main>
  <h1>liquid-tabbar</h1>
- <p>在網頁上模擬 iOS 原生液態玻璃（Liquid Glass）分頁列。按一下切換，按住可以左右拖動，膠囊蓋到的圖示會變色，鬆手才切換。</p>
+ <p>在網頁上模擬 iOS 原生液態玻璃（Liquid Glass）分頁列。按一下切換，按住可以左右拖動，膠囊蓋到的圖示會變色，鬆手才切換。「左邊按鈕」可以在分頁列左邊加一顆單獨的圓形按鈕（例如進入內頁時的返回）。</p>
 
  <div class="panel">
   <div class="row"><b>數量</b><span id="count"></span></div>
   <div class="row"><b>外觀</b><span id="theme"></span></div>
   <div class="row"><b>文字</b><span id="labels"></span></div>
+  <div class="row"><b>左邊按鈕</b><span id="side"></span></div>
   <div class="row"><b>強調色</b><input type="color" id="accent" value="#ff3d47"></div>
   <div id="log">（在下方分頁列上點按或拖動）</div>
  </div>
@@ -51,7 +52,15 @@
   search: '<circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="m15 15 5.5 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
   heart: '<path d="M12 20.5s-8-4.6-8-10.4A4.6 4.6 0 0 1 12 7.3a4.6 4.6 0 0 1 8 2.8c0 5.8-8 10.4-8 10.4z"/>',
   bell: '<path d="M12 3a6 6 0 0 0-6 6v3.6L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6z"/><path d="M9.5 19.5a2.5 2.5 0 0 0 5 0z"/>',
-  user: '<circle cx="12" cy="8" r="4.2"/><path d="M3.8 20.2c.8-4 4.2-6.4 8.2-6.4s7.4 2.4 8.2 6.4a.9.9 0 0 1-.9 1H4.7a.9.9 0 0 1-.9-1z"/>'
+  user: '<circle cx="12" cy="8" r="4.2"/><path d="M3.8 20.2c.8-4 4.2-6.4 8.2-6.4s7.4 2.4 8.2 6.4a.9.9 0 0 1-.9 1H4.7a.9.9 0 0 1-.9-1z"/>',
+  back: '<path d="m14.5 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  edit: '<path d="M15.4 4.1a2.5 2.5 0 0 1 3.5 0l1 1a2.5 2.5 0 0 1 0 3.5L9.6 18.9l-5.1 1.5a.7.7 0 0 1-.9-.9l1.5-5.1z"/><rect x="12.5" y="18.9" width="8.5" height="2.2" rx="1.1"/>'
+ };
+ // 左邊的圓形按鈕（side）：返回時示範「進入內頁」，導航欄少一格
+ const SIDES = {
+  back: { id: "back", label: "返回", icon: ICONS.back },
+  search: { id: "search", label: "搜尋", icon: ICONS.search },
+  edit: { id: "edit", label: "編輯", icon: ICONS.edit }
  };
  const ALL = [
   { id: "home", label: "首頁", icon: ICONS.home },
@@ -60,17 +69,20 @@
   { id: "inbox", label: "通知", icon: ICONS.bell },
   { id: "me", label: "我的", icon: ICONS.user }
  ];
- const state = { n: 4, labels: true, active: "home" };
+ const state = { n: 4, labels: true, active: "home", side: null };
  const log = t => { document.getElementById("log").textContent = t; };
 
  const bar = new LiquidTabbar("#bar", {
   onSelect: (item, i, info) => { state.active = item.id; log(`onSelect   ${item.id}（第 ${i} 格，${info.source}）`); },
-  onReselect: (item, i, info) => log(`onReselect ${item.id}（第 ${i} 格，${info.source}）`)
+  onReselect: (item, i, info) => log(`onReselect ${item.id}（第 ${i} 格，${info.source}）`),
+  onSide: side => log(`onSide     ${side.id}（左邊的圓形按鈕）`)
  });
  const render = () => {
-  const items = ALL.slice(0, state.n).map(a => state.labels ? a : { ...a, label: "" });
+  let items = ALL.slice(0, state.n).map(a => state.labels ? a : { ...a, label: "" });
+  if (state.side === "back") items = items.filter((a, i) => i !== 1);          // 內頁：拿掉第二格
+  if (state.side === "search") items = items.filter(a => a.id !== "search");    // 搜尋移到圓鈕，分頁列不重複
   if (!items.some(a => a.id === state.active)) state.active = items[0].id;
-  bar.set({ items, active: state.active });
+  bar.set({ side: state.side ? SIDES[state.side] : null, items, active: state.active });
  };
 
  // 控制項
@@ -87,6 +99,7 @@
  };
  opts("count", [["3", 3], ["4", 4], ["5", 5]], () => state.n, v => state.n = v);
  opts("labels", [["顯示", true], ["只有圖示", false]], () => state.labels, v => state.labels = v);
+ opts("side", [["無", null], ["返回", "back"], ["搜尋", "search"], ["編輯", "edit"]], () => state.side, v => state.side = v);
  opts("theme", [["深色", "dark"], ["淺色", "light"]], () => document.documentElement.dataset.theme || "dark", v => {
   document.documentElement.dataset.theme = v;
   bar.el.classList.toggle("ltb--light", v === "light");
