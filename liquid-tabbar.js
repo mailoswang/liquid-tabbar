@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.3.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.3.3 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -52,7 +52,7 @@
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
-  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "scale"];
+  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-xl", "--ltb-xr", "scale"];
   let uid = 0;   // SVG 漸層 id 用，同頁多個分頁列不衝突
 
   const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -270,14 +270,32 @@
       const smooth = u => u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
       const L = pl, Rr = pl + w, f = Math.min(h * .45, w / 3);   // S 形過渡的長度
       const kL = clamp(L / R, 0, 1), kR = clamp((W - Rr) / R, 0, 1);   // 底板在這端還往外延伸多少
+      // 從底板盡頭拖出來時，縮小後的圓弧跟著 k 逐漸滑出玻璃外（不在尖端外另外混出形狀）
+      const aL = Math.min(sL, sL + (L - 2 * hs - sL) * kL), aR = Math.max(sR, sR + (Rr + 2 * hs - sR) * kR);
+      // 只取底板實際存在的範圍（半高 > 0），不然會沿中線多描一條線到玻璃邊緣
+      // 取樣點：均勻取樣，再在各個圓弧上照角度加密（圓弧尖端變化很快，均勻取樣會把尖端削平），並含尖端本身
+      const x0 = L - 2, x1 = Rr + 2, xs = [], tips = [aL, aR];
       const n = Math.max(24, Math.ceil(w)), top = [], bot = [];
-      for (let i = 0; i <= n; i++) {
-        const x = L - 2 + (w + 4) * i / n;
-        const t = Math.max(kL * smooth(1 - (x - L) / f), kR * smooth(1 - (Rr - x) / f));
-        const hh = half(x, sL, sR, hs) * (1 - t) + half(x, 0, W, R) * t;
+      for (let i = 0; i <= n; i++) xs.push(x0 + (x1 - x0) * i / n);
+      for (const [a, r, dir] of [[aL, hs, 1], [aR, hs, -1], [0, R, 1], [W, R, -1]])
+        for (let j = 0; j <= 16; j++) xs.push(a + dir * r * (1 - Math.cos(Math.PI / 2 * j / 16)));
+      xs.sort((p, q) => p - q);
+      let last = -Infinity;
+      for (const x of xs) {
+        if (x < x0 || x > x1 || x - last < .05) continue;
+        last = x;
+        // S 形混合只在縮小的底板存在處生效，並在它的圓弧尖端漸弱到 0（尖端外不會多出細條）
+        const hS = half(x, aL, aR, hs);
+        const t = Math.max(kL * smooth(1 - (x - L) / f), kR * smooth(1 - (Rr - x) / f)) * (hS / hs);
+        const hh = hS + (half(x, 0, W, R) - hS) * t;
+        if (hh < .05 && !tips.some(q => Math.abs(q - x) < .01)) continue;
         top.push(x.toFixed(1) + " " + (R - hh).toFixed(1));
         bot.unshift(x.toFixed(1) + " " + (R + hh).toFixed(1));
       }
+      // 膠囊停在底板盡頭時，那端的挖空往外多擴一點，底板端點的亮邊才不會從邊界漏出一條細線
+      const st = this.el.style, xl = ((1 - kL) * 3).toFixed(2) + "px", xr = ((1 - kR) * 3).toFixed(2) + "px";
+      if (this._css["--ltb-xl"] !== xl) { this._css["--ltb-xl"] = xl; st.setProperty("--ltb-xl", xl); }
+      if (this._css["--ltb-xr"] !== xr) { this._css["--ltb-xr"] = xr; st.setProperty("--ltb-xr", xr); }
       const pts = top.concat(bot);
       const clip = "polygon(" + pts.map(q => q.replace(" ", "px ") + "px").join(",") + ")";
       if (this._clipCss !== clip) {
@@ -401,7 +419,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.3.2";
+  LiquidTabbar.version = "2.3.3";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;

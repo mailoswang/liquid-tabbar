@@ -23,11 +23,11 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins an exact version (`@v2.3.2`), so later releases never change your project unexpectedly. Other choices:
+The URL pins an exact version (`@v2.3.3`), so later releases never change your project unexpectedly. Other choices:
 
 - `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
 - Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -138,7 +138,7 @@ For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -294,6 +294,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.3.3**: Fixes for the glass at the bar's ends (leftmost / rightmost slot): no faint arc of the bar's rounded edge inside the glass, no horizontal line from the shrunken arc's tip to the glass edge, a round tip instead of a flattened one, and no stray sliver while dragging away from an end. The bar's own glass layer now rounds its corners with `clip-path` instead of `border-radius`.
 - **v2.3.2**: The bar inside the glass is now drawn from an outline computed every frame (`clip-path` for the fill, SVG for the highlight edge): flat in the middle, curving back out in a smooth S near the ends of the glass to join the bar outside, or keeping the shrunken rounded end at the bar's own ends. The highlight edge inside the glass uses a fixed white gradient and does not follow a custom `--ltb-ring`. The bar has no drop shadow by default (`--ltb-shadow: none`); set `--ltb-shadow` to bring one back.
 - **v2.3.1**: Inside the glass, the whole bar now shrinks (rounded ends included) instead of showing two crescents, and the glass is clear: no white tint or sheen, so `--ltb-lift-bg` is no longer used.
 - **v2.3.0**: Lens effect while pressed: inside the glass, the bar's background looks shrunk, with two crescents at the middle of the top and bottom edges showing the page behind (new `shrink` option, .86). The icons and labels under the glass are no longer magnified (`mag` now 1), so they stay aligned with their slots while dragging. The bar's background, blur and rim now live on an inner `.ltb-bg` layer instead of `.ltb` itself.

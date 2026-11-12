@@ -23,11 +23,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.3.2`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.3.3`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -138,7 +138,7 @@ addEventListener("hashchange", () => {
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -294,6 +294,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.3.3**：修正膠囊停在底板兩端（最左／最右格）時的玻璃：玻璃裡不再漏出底板圓角的細弧線、縮小圓弧的尖端不再多一條橫線連到玻璃邊緣、尖端是圓的不會被削平，從兩端拖出來時也不會多出細條。底板玻璃那層改用 `clip-path` 裁圓角，不再用 `border-radius`。
 - **v2.3.2**：玻璃裡的底板改成每幀算出輪廓再畫（底色用 `clip-path`、亮邊用 SVG）：中段平直，靠近玻璃兩端以平滑的 S 形接回外面的底板；在底板本身的盡頭則維持縮小的圓弧。玻璃裡的亮邊用固定的白色漸層，不會跟著自訂的 `--ltb-ring`。底板預設不再有投影（`--ltb-shadow: none`），要的話自己設 `--ltb-shadow`。
 - **v2.3.1**：玻璃裡改成整條底板等比例縮小（兩端圓弧也一起縮），不再是上下兩塊月牙；玻璃改成透明，沒有白色霧面與亮面漸層，因此不再使用 `--ltb-lift-bg`。
 - **v2.3.0**：按住時的透鏡效果：玻璃範圍內的底板背景看起來縮小，上下緣正中間各有一塊月牙透出背後的頁面（新選項 `shrink`，.86）；玻璃下的圖示與文字不再放大（`mag` 改為 1），拖動時會對齊原本的格子。底板的底色、模糊與亮邊改放在內層的 `.ltb-bg`，不再直接在 `.ltb` 上。

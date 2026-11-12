@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.3.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.3.3 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -79,28 +79,38 @@
 }
 
 /* 底板的玻璃（底色、模糊、亮邊）放在獨立一層：浮起時在膠囊的位置挖空（程度跟著 --ltb-g），
-   膠囊範圍內改由 .ltb-bar 畫縮小後的底板 */
+   膠囊範圍內改由 .ltb-bar 畫縮小後的底板。
+   圓角用 clip-path 裁、不用 border-radius：border-radius 圓角最外圈的反鋸齒像素不受遮罩影響，
+   膠囊停在兩端時會在玻璃裡漏出一條細弧線。邊緣光與外圈亮線交給 ::after / ::before 畫圓角 */
 .ltb-bg {
-  position: absolute; inset: 0; z-index: -2; border-radius: inherit; pointer-events: none;
+  position: absolute; inset: 0; z-index: -2; pointer-events: none;
+  clip-path: inset(0 round 999px);
   background: var(--ltb-bg);
   -webkit-backdrop-filter: var(--ltb-blur); backdrop-filter: var(--ltb-blur);
-  box-shadow: var(--ltb-rim);
   --ltb-h: rgb(0 0 0 / var(--ltb-g, 0));
   --ltb-r: calc(var(--ltb-ph, 0px) / 2);
   -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(var(--ltb-h) 0 0),
-    radial-gradient(circle var(--ltb-r) at 100% 50%, var(--ltb-h) 98%, transparent), radial-gradient(circle var(--ltb-r) at 0 50%, var(--ltb-h) 98%, transparent);
+    radial-gradient(circle calc(var(--ltb-r) + var(--ltb-xl, 0px)) at 100% 50%, var(--ltb-h) 98%, transparent),
+    radial-gradient(circle calc(var(--ltb-r) + var(--ltb-xr, 0px)) at 0 50%, var(--ltb-h) 98%, transparent);
   mask-image: linear-gradient(#000 0 0), linear-gradient(var(--ltb-h) 0 0),
-    radial-gradient(circle var(--ltb-r) at 100% 50%, var(--ltb-h) 98%, transparent), radial-gradient(circle var(--ltb-r) at 0 50%, var(--ltb-h) 98%, transparent);
+    radial-gradient(circle calc(var(--ltb-r) + var(--ltb-xl, 0px)) at 100% 50%, var(--ltb-h) 98%, transparent),
+    radial-gradient(circle calc(var(--ltb-r) + var(--ltb-xr, 0px)) at 0 50%, var(--ltb-h) 98%, transparent);
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%, calc(var(--ltb-pw, 0px) - var(--ltb-ph, 0px) + 1px) var(--ltb-ph, 0px), var(--ltb-r) var(--ltb-ph, 0px), var(--ltb-r) var(--ltb-ph, 0px);
-  mask-size: 100% 100%, calc(var(--ltb-pw, 0px) - var(--ltb-ph, 0px) + 1px) var(--ltb-ph, 0px), var(--ltb-r) var(--ltb-ph, 0px), var(--ltb-r) var(--ltb-ph, 0px);
-  -webkit-mask-position: 0 0, calc(var(--ltb-pl, 0px) + var(--ltb-r) - .5px) var(--ltb-pt, 0px), var(--ltb-pl, 0px) var(--ltb-pt, 0px), calc(var(--ltb-pl, 0px) + var(--ltb-pw, 0px) - var(--ltb-r)) var(--ltb-pt, 0px);
-  mask-position: 0 0, calc(var(--ltb-pl, 0px) + var(--ltb-r) - .5px) var(--ltb-pt, 0px), var(--ltb-pl, 0px) var(--ltb-pt, 0px), calc(var(--ltb-pl, 0px) + var(--ltb-pw, 0px) - var(--ltb-r)) var(--ltb-pt, 0px);
+  -webkit-mask-size: 100% 100%, calc(var(--ltb-pw, 0px) - var(--ltb-ph, 0px) + 1px) var(--ltb-ph, 0px),
+    calc(var(--ltb-r) + var(--ltb-xl, 0px)) var(--ltb-ph, 0px), calc(var(--ltb-r) + var(--ltb-xr, 0px)) var(--ltb-ph, 0px);
+  mask-size: 100% 100%, calc(var(--ltb-pw, 0px) - var(--ltb-ph, 0px) + 1px) var(--ltb-ph, 0px),
+    calc(var(--ltb-r) + var(--ltb-xl, 0px)) var(--ltb-ph, 0px), calc(var(--ltb-r) + var(--ltb-xr, 0px)) var(--ltb-ph, 0px);
+  -webkit-mask-position: 0 0, calc(var(--ltb-pl, 0px) + var(--ltb-r) - .5px) var(--ltb-pt, 0px), calc(var(--ltb-pl, 0px) - var(--ltb-xl, 0px)) var(--ltb-pt, 0px), calc(var(--ltb-pl, 0px) + var(--ltb-pw, 0px) - var(--ltb-r)) var(--ltb-pt, 0px);
+  mask-position: 0 0, calc(var(--ltb-pl, 0px) + var(--ltb-r) - .5px) var(--ltb-pt, 0px), calc(var(--ltb-pl, 0px) - var(--ltb-xl, 0px)) var(--ltb-pt, 0px), calc(var(--ltb-pl, 0px) + var(--ltb-pw, 0px) - var(--ltb-r)) var(--ltb-pt, 0px);
   -webkit-mask-composite: source-out, source-over, source-over;
   mask-composite: subtract, add, add;
 }
+.ltb-bg::after {
+  content: ""; position: absolute; inset: 0; border-radius: 999px; pointer-events: none;
+  box-shadow: var(--ltb-rim);
+}
 .ltb-bg::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  content: ""; position: absolute; inset: 0; border-radius: 999px; pointer-events: none;
   padding: 1px; background: var(--ltb-ring);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
