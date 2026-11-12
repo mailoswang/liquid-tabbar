@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.3.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.3.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -10,7 +10,6 @@
   --ltb-accent: #ff3d47;                 /* 膠囊蓋到的圖示顏色 */
   --ltb-focus: var(--ltb-accent);        /* 鍵盤聚焦外框 */
   --ltb-ind: rgba(0, 0, 0, .55);         /* 平常的膠囊底色 */
-  --ltb-lift-bg: rgba(255, 255, 255, .12);   /* 浮起的玻璃膠囊 */
   --ltb-lift-ring: rgba(255, 255, 255, .32);
   --ltb-lift-edge: rgba(0, 0, 0, .45);
   --ltb-lift-shadow: rgba(0, 0, 0, .4);
@@ -40,7 +39,6 @@
   --ltb-ink: #141414;
   --ltb-accent: #e50914;
   --ltb-ind: rgba(0, 0, 0, .07);
-  --ltb-lift-bg: rgba(255, 255, 255, .55);
   --ltb-lift-ring: rgba(255, 255, 255, .7);
   --ltb-lift-edge: rgba(0, 0, 0, .14);
   --ltb-lift-shadow: rgba(0, 0, 0, .18);
@@ -54,7 +52,6 @@
     --ltb-ink: #141414;
     --ltb-accent: #e50914;
     --ltb-ind: rgba(0, 0, 0, .07);
-    --ltb-lift-bg: rgba(255, 255, 255, .55);
     --ltb-lift-ring: rgba(255, 255, 255, .7);
     --ltb-lift-edge: rgba(0, 0, 0, .14);
     --ltb-lift-shadow: rgba(0, 0, 0, .18);
@@ -124,27 +121,24 @@
   opacity: calc(1 - var(--ltb-g, 0));
 }
 .ltb-lens {
-  z-index: -1; background-color: var(--ltb-lift-bg); overflow: hidden;
+  z-index: -1; overflow: hidden;
   box-shadow: 0 0 0 .5px var(--ltb-lift-edge), 0 8px 22px var(--ltb-lift-shadow), 0 2px 6px rgba(0, 0, 0, .18);
   opacity: var(--ltb-g, 0);
 }
-/* 亮邊放在 ::after，才會蓋在玻璃裡縮小的底板上面 */
+/* 玻璃本身是透明的，只有外框與亮邊；放在 ::after 才會蓋在玻璃裡的底板上面 */
 .ltb-lens::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .04) 55%, rgba(255, 255, 255, .1));
   box-shadow: inset 0 0 0 1px var(--ltb-lift-ring), inset 1.5px 2px 0 -.5px rgba(255, 255, 255, .9), inset -1px -1.5px 0 -.5px rgba(255, 255, 255, .4),
     inset 0 0 14px rgba(255, 255, 255, .14);
 }
-/* 透鏡：玻璃裡的底板鋪滿整個膠囊，只在上下緣正中間挖出兩塊月牙（中間最深、往兩側收成零），
-   透出背後的頁面，看起來就像底板被透鏡往中間縮小。月牙深度依 --ltb-bs 算 */
+/* 透鏡：玻璃裡的底板是整條底板的複本，以膠囊中心等比例縮小（--ltb-bs），兩端的圓弧也一起縮；
+   和玻璃之間的空隙直接透出頁面 */
 .ltb-bar {
-  --ltb-in: max(0px, calc((var(--ltb-ph, 0px) - var(--ltb-height) * var(--ltb-bs, 1)) / 2));
-  --ltb-ms: radial-gradient(ellipse 36% var(--ltb-in) at 50% 0, transparent 92%, #000);
-  --ltb-mb: radial-gradient(ellipse 36% var(--ltb-in) at 50% 100%, transparent 92%, #000);
-  position: absolute; inset: 0; border-radius: inherit;
-  background: var(--ltb-bg);
-  -webkit-mask-image: var(--ltb-ms), var(--ltb-mb); mask-image: var(--ltb-ms), var(--ltb-mb);
-  -webkit-mask-composite: source-in; mask-composite: intersect;
+  position: absolute; left: calc(-1 * var(--ltb-pl, 0px)); top: calc(-1 * var(--ltb-pt, 0px));
+  width: var(--ltb-dw, 0px); height: var(--ltb-height); border-radius: 999px;
+  background: var(--ltb-bg); box-shadow: var(--ltb-rim);
+  transform-origin: var(--ltb-cx, 0px) 50%;
+  scale: var(--ltb-bs, 1);
 }
 .ltb-noind .ltb-ind, .ltb-noind .ltb-lens, .ltb-noind .ltb-clip { opacity: 0 }
 

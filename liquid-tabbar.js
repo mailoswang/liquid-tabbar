@@ -1,9 +1,9 @@
-/*! liquid-tabbar v2.3.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.3.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
  *   ② 滑行：位置由彈簧追向目標，寬度隨速度拉長、高度略壓扁
- *   ③ 透鏡：膠囊範圍內的底板看起來微微縮小：上下緣正中間各開一塊月牙，透出背後的頁面；
+ *   ③ 透鏡：玻璃裡的整條底板以膠囊中心微微縮小（約 0.86 倍），兩端圓弧也一起縮，空隙透出頁面；
  *      玻璃下的變色圖示與文字不縮小，跟著整條底板一起放大
  *   ④ 落定：到位後縮回深色膠囊，尺寸略過衝再回彈
  *   左右兩端：膠囊不超出底板（浮起時最多外擴 edge px），在最左／最右格放大時往內側長
@@ -25,7 +25,7 @@
     growW: 1.3,      // 浮起時膠囊變寬倍率
     growH: 1.33,     // 浮起時膠囊變高倍率（超出底板上下緣）
     mag: 1,          // 玻璃下圖示縮放倍率（1：跟著底板一起放大；>1 再放大、<1 縮小）
-    shrink: .86,     // 玻璃裡底板看起來縮小多少（決定上下兩塊月牙的深度；1 為沒有）
+    shrink: .86,     // 玻璃裡看到的底板縮小倍率（1 為不縮）
     stretch: .065,   // 每 1 px/s 速度拉長幾 px
     stretchMax: 1.4, // 拉長上限（以一格寬為單位）
     squash: 9000,    // 速度造成高度壓扁的分母（越小越扁）
@@ -359,7 +359,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.3.0";
+  LiquidTabbar.version = "2.3.1";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;

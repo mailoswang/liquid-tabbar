@@ -10,7 +10,7 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 
 - **Press**: the dark pill fades into clear glass about 1.3× larger, rising past the top and bottom of the bar, while the whole bar grows by 3–5%.
 - **Slide**: a spring carries the pill to its target. It stretches with speed and flattens slightly.
-- **Lens**: inside the glass, the bar's background looks slightly shrunk: two crescents open at the middle of the top and bottom edges (deepest in the center, tapering to nothing toward the ends) and show the page behind. The recolored icons and labels are not shrunk; they grow with the whole bar.
+- **Lens**: inside the glass, the whole bar shrinks slightly (about 0.86×) around the pill's center, rounded ends included, and the page shows through the gap. The glass itself is clear, with only its outline and rim highlights. The recolored icons and labels are not shrunk; they grow with the whole bar.
 - **Settle**: once in place it shrinks back into the dark pill, overshooting its size and springing back once.
 - **Press and drag**: the pill follows your finger and recolors the icons it covers. The tab switches when you let go.
 - **Instant switch**: `onSelect` fires the moment you let go, just like iOS, and the animation keeps playing while your page changes. Heavy pages can wait for the pill instead (`waitForPill`).
@@ -23,11 +23,11 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins an exact version (`@v2.3.0`), so later releases never change your project unexpectedly. Other choices:
+The URL pins an exact version (`@v2.3.1`), so later releases never change your project unexpectedly. Other choices:
 
 - `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
 - Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -138,7 +138,7 @@ For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -204,7 +204,7 @@ Override the variables on `.ltb` in your CSS (or set them in the element's `styl
 |---|---|
 | `--ltb-ink` / `--ltb-accent` / `--ltb-focus` | Icon and label color / selected color / keyboard focus ring |
 | `--ltb-ind` | Pill color at rest |
-| `--ltb-lift-bg` / `--ltb-lift-ring` / `--ltb-lift-edge` / `--ltb-lift-shadow` | The lifted glass pill while pressed |
+| `--ltb-lift-ring` / `--ltb-lift-edge` / `--ltb-lift-shadow` | The lifted glass pill while pressed: rim, outline, shadow |
 | `--ltb-bg` / `--ltb-blur` / `--ltb-rim` / `--ltb-shadow` / `--ltb-ring` | Glass bar: fill, blur, edge glow, drop shadow, outer highlight ring |
 | `--ltb-width` / `--ltb-height` / `--ltb-pad-x` / `--ltb-pad-y` | Size |
 | `--ltb-bottom` / `--ltb-z` | Position (defaults to where the native iOS tab bar sits) and stacking order |
@@ -255,7 +255,7 @@ Springs take a stiffness `k` and a damping ratio `zeta` (1 = no overshoot, lower
 | `settle` | `{ k: 260, zeta: .46 }` | Shrinking back after arrival: slower, one visible bounce |
 | `growW` / `growH` | `1.3` / `1.33` | How much wider / taller the glass gets while pressed |
 | `mag` | `1` | Scale of the icons under the glass (1 = grow with the bar, >1 magnify, <1 shrink) |
-| `shrink` | `.86` | How shrunk the bar looks inside the glass; sets the depth of the two crescents (smaller = deeper, 1 = none) |
+| `shrink` | `.86` | Scale of the bar seen inside the glass (smaller = more shrunk, 1 = none) |
 | `stretch` / `stretchMax` | `.065` / `1.4` | Extra width per 1 px/s of speed / maximum stretch (in tab widths) |
 | `squash` / `squashMax` | `9000` / `.14` | How much speed flattens the pill (smaller = flatter) / maximum flattening |
 | `barX` / `barY` | `.035` / `.05` | How much the whole bar grows horizontally / vertically while pressed |
@@ -294,6 +294,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.3.1**: Inside the glass, the whole bar now shrinks (rounded ends included) instead of showing two crescents, and the glass is clear: no white tint or sheen, so `--ltb-lift-bg` is no longer used.
 - **v2.3.0**: Lens effect while pressed: inside the glass, the bar's background looks shrunk, with two crescents at the middle of the top and bottom edges showing the page behind (new `shrink` option, .86). The icons and labels under the glass are no longer magnified (`mag` now 1), so they stay aligned with their slots while dragging. The bar's background, blur and rim now live on an inner `.ltb-bg` layer instead of `.ltb` itself.
 - **v2.1.0**: New `waitForPill` option (with `arriveDistance` / `arriveTimeout`) to call `onSelect` after the pill arrives. Styles are written only when they change, which cuts per-frame style work on phones.
 - **v2.0.0**: New motion based on recordings of the native iOS tab bar: the glass grows past the bar, the icons underneath are magnified, the whole bar scales while pressed, and the pill bounces once as it settles. `onSelect` now fires the moment the finger lifts instead of after the pill arrives. Breaking changes:
