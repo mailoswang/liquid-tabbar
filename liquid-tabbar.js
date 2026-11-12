@@ -1,9 +1,10 @@
-/*! liquid-tabbar v2.3.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.3.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
  *   ② 滑行：位置由彈簧追向目標，寬度隨速度拉長、高度略壓扁
- *   ③ 透鏡：玻璃裡的整條底板以膠囊中心微微縮小（約 0.86 倍），兩端圓弧也一起縮，空隙透出頁面；
+ *   ③ 透鏡：玻璃裡的底板看起來微微縮小（約 0.86 倍），空隙透出頁面；靠近玻璃兩端以 S 形接回外面的底板，
+ *      在底板盡頭（最左／最右格）則是圓弧一起縮；
  *      玻璃下的變色圖示與文字不縮小，跟著整條底板一起放大
  *   ④ 落定：到位後縮回深色膠囊，尺寸略過衝再回彈
  *   左右兩端：膠囊不超出底板（浮起時最多外擴 edge px），在最左／最右格放大時往內側長
@@ -25,7 +26,7 @@
     growW: 1.3,      // 浮起時膠囊變寬倍率
     growH: 1.33,     // 浮起時膠囊變高倍率（超出底板上下緣）
     mag: 1,          // 玻璃下圖示縮放倍率（1：跟著底板一起放大；>1 再放大、<1 縮小）
-    shrink: .86,     // 玻璃裡看到的底板縮小倍率（1 為不縮）
+    shrink: .86,     // 玻璃裡的底板看起來縮小多少（1 為不縮）
     stretch: .065,   // 每 1 px/s 速度拉長幾 px
     stretchMax: 1.4, // 拉長上限（以一格寬為單位）
     squash: 9000,    // 速度造成高度壓扁的分母（越小越扁）
@@ -51,7 +52,8 @@
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
-  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-bs", "scale"];
+  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "scale"];
+  let uid = 0;   // SVG 漸層 id 用，同頁多個分頁列不衝突
 
   const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -95,9 +97,17 @@
       this._css = {};      // 上一次寫入的樣式值，沒變就不重寫
 
       el.classList.add("ltb");
-      el.innerHTML = '<span class="ltb-bg" aria-hidden="true"></span><span class="ltb-ind" aria-hidden="true"></span><span class="ltb-lens" aria-hidden="true"><span class="ltb-bar"></span></span>' +
+      el.innerHTML = '<span class="ltb-bg" aria-hidden="true"></span><span class="ltb-ind" aria-hidden="true"></span><span class="ltb-lens" aria-hidden="true"><span class="ltb-bar"></span>' +
+        `<svg class="ltb-edge"><defs><linearGradient id="ltb-ring-${++uid}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="1">` +
+        '<stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".35" stop-color="#fff" stop-opacity=".16"/>' +
+        '<stop offset=".65" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity=".26"/></linearGradient></defs>' +
+        `<path stroke="url(#ltb-ring-${uid})"/></svg></span>` +
         '<span class="ltb-clip" aria-hidden="true"><span class="ltb-copy"></span></span>';
       this._copy = el.querySelector(".ltb-copy");
+      this._bar = el.querySelector(".ltb-bar");
+      this._edge = el.querySelector(".ltb-edge");
+      this._edgeGrad = el.querySelector(".ltb-edge linearGradient");
+      this._edgePath = el.querySelector(".ltb-edge path");
       this._clip = el.querySelector(".ltb-clip");
       this._bind();
       this.set({ items: o.items, active: o.active });
@@ -242,8 +252,40 @@
       put("--ltb-g", Math.min(1, pc * 1.6).toFixed(3));
       put("--ltb-cx", s.x.toFixed(2) + "px");
       put("--ltb-m", (1 + (P.mag - 1) * pc).toFixed(4));
-      put("--ltb-bs", (1 + (P.shrink - 1) * pc).toFixed(4));
       put("scale", `${(1 + P.barX * p).toFixed(4)} ${(1 + P.barY * p).toFixed(4)}`);
+      if (pc > 0) this._lensShape(pl, w, h, s.x, 1 + (P.shrink - 1) * pc);
+    }
+
+    // 玻璃裡的底板輪廓（底板座標）：中段是縮小後的高度（以膠囊中心縮放 shrink 倍）；
+    // 靠近玻璃左右兩端時，若底板還往外延伸，就用平滑的 S 形接回原本的高度，和外面的底板連成一條；
+    // 若那端就是底板的盡頭（最左／最右格），維持縮小後的圓弧。用 clip-path 裁底色、SVG 描亮邊
+    _lensShape(pl, w, h, cx, bs) {
+      const W = this.W, H = this.H, R = H / 2, hs = R * bs;
+      const sL = cx * (1 - bs), sR = cx + (W - cx) * bs;           // 縮小後的左右端
+      const half = (x, a, b, r) => {                               // 膠囊 [a,b]、半徑 r 在 x 的半高
+        if (x <= a || x >= b) return 0;
+        const d = Math.min(x - a, b - x);
+        return d >= r ? r : Math.sqrt(r * r - (r - d) * (r - d));
+      };
+      const smooth = u => u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
+      const L = pl, Rr = pl + w, f = Math.min(h * .45, w / 3);   // S 形過渡的長度
+      const kL = clamp(L / R, 0, 1), kR = clamp((W - Rr) / R, 0, 1);   // 底板在這端還往外延伸多少
+      const n = Math.max(24, Math.ceil(w)), top = [], bot = [];
+      for (let i = 0; i <= n; i++) {
+        const x = L - 2 + (w + 4) * i / n;
+        const t = Math.max(kL * smooth(1 - (x - L) / f), kR * smooth(1 - (Rr - x) / f));
+        const hh = half(x, sL, sR, hs) * (1 - t) + half(x, 0, W, R) * t;
+        top.push(x.toFixed(1) + " " + (R - hh).toFixed(1));
+        bot.unshift(x.toFixed(1) + " " + (R + hh).toFixed(1));
+      }
+      const pts = top.concat(bot);
+      const clip = "polygon(" + pts.map(q => q.replace(" ", "px ") + "px").join(",") + ")";
+      if (this._clipCss !== clip) {
+        this._clipCss = clip;
+        this._bar.style.clipPath = clip; this._bar.style.webkitClipPath = clip;
+        this._edgePath.setAttribute("d", "M" + pts.join("L") + "Z");
+      }
+      if (this._edgeH !== H) { this._edgeH = H; this._edgeGrad.setAttribute("y2", H); }
     }
 
     /* ---------- 內部 ---------- */
@@ -359,7 +401,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.3.1";
+  LiquidTabbar.version = "2.3.2";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;

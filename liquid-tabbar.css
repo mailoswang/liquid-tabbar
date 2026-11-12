@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.3.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.3.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -18,7 +18,7 @@
   --ltb-bg: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .03) 45%, rgba(179, 179, 179, .07)), rgba(86, 86, 90, .55);
   --ltb-blur: blur(2px) saturate(1.5);
   --ltb-rim: inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 0 4px rgba(255, 255, 255, .12), inset 0 0 14px rgba(255, 255, 255, .06);
-  --ltb-shadow: 0 12px 30px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .3);
+  --ltb-shadow: none;                     /* 底板投影（預設不要；要的話自己設） */
   --ltb-ring: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, .16) 35%, rgba(255, 255, 255, .12) 65%, rgba(255, 255, 255, .26));
 
   /* 尺寸與位置 */
@@ -44,7 +44,7 @@
   --ltb-lift-shadow: rgba(0, 0, 0, .18);
   --ltb-bg: linear-gradient(180deg, rgba(255, 255, 255, .4), rgba(255, 255, 255, .1) 45%, rgba(179, 179, 179, .16)), rgba(255, 255, 255, .42);
   --ltb-rim: inset 0 0 0 1px rgba(255, 255, 255, .55), inset 0 0 4px rgba(255, 255, 255, .45), inset 0 0 14px rgba(255, 255, 255, .2);
-  --ltb-shadow: 0 10px 28px rgba(0, 0, 0, .12), 0 2px 6px rgba(0, 0, 0, .06);
+  --ltb-shadow: none;
 }
 
 @media (prefers-color-scheme: light) {
@@ -57,7 +57,7 @@
     --ltb-lift-shadow: rgba(0, 0, 0, .18);
     --ltb-bg: linear-gradient(180deg, rgba(255, 255, 255, .4), rgba(255, 255, 255, .1) 45%, rgba(179, 179, 179, .16)), rgba(255, 255, 255, .42);
     --ltb-rim: inset 0 0 0 1px rgba(255, 255, 255, .55), inset 0 0 4px rgba(255, 255, 255, .45), inset 0 0 14px rgba(255, 255, 255, .2);
-    --ltb-shadow: 0 10px 28px rgba(0, 0, 0, .12), 0 2px 6px rgba(0, 0, 0, .06);
+    --ltb-shadow: none;
   }
 }
 
@@ -131,15 +131,14 @@
   box-shadow: inset 0 0 0 1px var(--ltb-lift-ring), inset 1.5px 2px 0 -.5px rgba(255, 255, 255, .9), inset -1px -1.5px 0 -.5px rgba(255, 255, 255, .4),
     inset 0 0 14px rgba(255, 255, 255, .14);
 }
-/* 透鏡：玻璃裡的底板是整條底板的複本，以膠囊中心等比例縮小（--ltb-bs），兩端的圓弧也一起縮；
-   和玻璃之間的空隙直接透出頁面 */
-.ltb-bar {
+/* 透鏡：玻璃裡的底板。JS 依膠囊位置算出輪廓（中段縮小、兩端以 S 形接回外面的底板），
+   用 clip-path 裁出底色；亮邊由 .ltb-edge（SVG）沿同一條輪廓描線 */
+.ltb-bar, .ltb-edge {
   position: absolute; left: calc(-1 * var(--ltb-pl, 0px)); top: calc(-1 * var(--ltb-pt, 0px));
-  width: var(--ltb-dw, 0px); height: var(--ltb-height); border-radius: 999px;
-  background: var(--ltb-bg); box-shadow: var(--ltb-rim);
-  transform-origin: var(--ltb-cx, 0px) 50%;
-  scale: var(--ltb-bs, 1);
+  width: var(--ltb-dw, 0px); height: var(--ltb-height);
 }
+.ltb-bar { background: var(--ltb-bg) }
+.ltb-edge { overflow: visible; fill: none; stroke-width: 1 }
 .ltb-noind .ltb-ind, .ltb-noind .ltb-lens, .ltb-noind .ltb-clip { opacity: 0 }
 
 /* ==========================================================================

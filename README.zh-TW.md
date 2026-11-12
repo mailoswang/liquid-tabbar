@@ -10,7 +10,7 @@
 
 - **按下**：深色膠囊淡出、浮起成透明玻璃，放大約 1.3 倍、上下超出底板；整條分頁列放大約 3–5%
 - **滑行**：彈簧帶著膠囊滑向目標，速度越快拉得越長、高度略壓扁
-- **透鏡**：玻璃裡的整條底板以膠囊中心微微縮小（約 0.86 倍），兩端圓弧也一起縮，空隙透出背後的頁面；玻璃本身是透明的，只有外框與亮邊；玻璃下的變色圖示與文字不縮小，跟著整條底板一起放大
+- **透鏡**：玻璃裡的底板以膠囊中心看起來微微縮小（約 0.86 倍），空隙透出背後的頁面；靠近玻璃兩端時邊緣以平滑的 S 形接回外面的底板，在底板本身的盡頭（最左／最右格）則是圓弧一起縮小；玻璃本身是透明的，只有外框與亮邊；玻璃下的變色圖示與文字不縮小，跟著整條底板一起放大
 - **落定**：到位後縮回深色膠囊，尺寸略過衝再回彈一次
 - **按住拖動**：膠囊跟著手指，蓋到的圖示即時變色，鬆手才切換
 - **立即換頁**：放開的瞬間就呼叫 `onSelect`，跟 iOS 一樣，頁面切換時動畫繼續播完；頁面很重時也可以改成等膠囊到位（`waitForPill`）
@@ -23,11 +23,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.3.1`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.3.2`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -138,7 +138,7 @@ addEventListener("hashchange", () => {
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.1/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.2/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -255,7 +255,7 @@ new LiquidTabbar("#tabs", {
 | `settle` | `{ k: 260, zeta: .46 }` | 到位後縮回：較慢、明顯回彈一次 |
 | `growW` / `growH` | `1.3` / `1.33` | 按住時玻璃變寬 / 變高的倍率 |
 | `mag` | `1` | 玻璃下圖示的縮放倍率（1：跟著底板一起放大；>1 再放大、<1 縮小） |
-| `shrink` | `.86` | 玻璃裡看到的底板縮小倍率（越小縮得越多，1 為不縮） |
+| `shrink` | `.86` | 玻璃裡的底板看起來縮小多少（越小縮得越多，1 為不縮） |
 | `stretch` / `stretchMax` | `.065` / `1.4` | 每 1 px/s 速度多拉長幾 px / 拉長上限（以一格寬為單位） |
 | `squash` / `squashMax` | `9000` / `.14` | 速度讓膠囊壓扁的程度（越小越扁）/ 壓扁上限 |
 | `barX` / `barY` | `.035` / `.05` | 按住時整條分頁列水平 / 垂直放大多少 |
@@ -294,6 +294,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.3.2**：玻璃裡的底板改成每幀算出輪廓再畫（底色用 `clip-path`、亮邊用 SVG）：中段平直，靠近玻璃兩端以平滑的 S 形接回外面的底板；在底板本身的盡頭則維持縮小的圓弧。玻璃裡的亮邊用固定的白色漸層，不會跟著自訂的 `--ltb-ring`。底板預設不再有投影（`--ltb-shadow: none`），要的話自己設 `--ltb-shadow`。
 - **v2.3.1**：玻璃裡改成整條底板等比例縮小（兩端圓弧也一起縮），不再是上下兩塊月牙；玻璃改成透明，沒有白色霧面與亮面漸層，因此不再使用 `--ltb-lift-bg`。
 - **v2.3.0**：按住時的透鏡效果：玻璃範圍內的底板背景看起來縮小，上下緣正中間各有一塊月牙透出背後的頁面（新選項 `shrink`，.86）；玻璃下的圖示與文字不再放大（`mag` 改為 1），拖動時會對齊原本的格子。底板的底色、模糊與亮邊改放在內層的 `.ltb-bg`，不再直接在 `.ltb` 上。
 - **v2.1.0**：新增 `waitForPill` 選項（搭配 `arriveDistance` / `arriveTimeout`），可以等膠囊到位才呼叫 `onSelect`；樣式只在數值改變時才寫入，減少手機上每一格的樣式計算。
