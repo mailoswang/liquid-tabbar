@@ -10,7 +10,7 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 
 - **Press**: the dark pill fades into clear glass about 1.3× larger, rising past the top and bottom of the bar, while the whole bar grows by 3–5%.
 - **Slide**: a spring carries the pill to its target. It stretches with speed and flattens slightly.
-- **Lens**: inside the glass, the bar looks slightly shrunk (about 0.86×) around the pill's center and the page shows through the gap. Near the ends of the glass its edge curves back out in a smooth S to meet the bar outside; at the bar's own ends (leftmost / rightmost slot) the rounded end shrinks instead. The glass itself is clear, with only its outline and rim highlights. The recolored icons and labels are not shrunk; they grow with the whole bar.
+- **Lens**: while the whole bar grows slightly, the bar inside the glass keeps its original, un-grown size, so it looks a little smaller and the page shows through the thin gap. Near the ends of the glass its edge curves out in a smooth S to meet the grown bar outside; at the bar's own ends (leftmost / rightmost slot) the original rounded end shows instead. The glass itself is clear, with only its outline and rim highlights. The recolored icons and labels are not shrunk; they grow with the whole bar.
 - **Settle**: once in place it shrinks back into the dark pill, overshooting its size and springing back once.
 - **Press and drag**: the pill follows your finger and recolors the icons it covers. The tab switches when you let go.
 - **Instant switch**: `onSelect` fires the moment you let go, just like iOS, and the animation keeps playing while your page changes. Heavy pages can wait for the pill instead (`waitForPill`).
@@ -23,11 +23,11 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins an exact version (`@v2.3.3`), so later releases never change your project unexpectedly. Other choices:
+The URL pins an exact version (`@v2.4.0`), so later releases never change your project unexpectedly. Other choices:
 
 - `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
 - Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -102,7 +102,7 @@ Everything that usually differs between projects (tab count, icons, labels, colo
       { id: "inbox",  icon: ICONS.bell },
       { id: "me",     icon: ICONS.user }
     ],
-    physics: { growW: 1.2, shrink: .9, settle: { k: 260, zeta: .7 } }
+    physics: { growW: 1.2, barY: .03, settle: { k: 260, zeta: .7 } }
   });
 </script>
 ```
@@ -138,7 +138,7 @@ For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.3.3/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -255,7 +255,6 @@ Springs take a stiffness `k` and a damping ratio `zeta` (1 = no overshoot, lower
 | `settle` | `{ k: 260, zeta: .46 }` | Shrinking back after arrival: slower, one visible bounce |
 | `growW` / `growH` | `1.3` / `1.33` | How much wider / taller the glass gets while pressed |
 | `mag` | `1` | Scale of the icons under the glass (1 = grow with the bar, >1 magnify, <1 shrink) |
-| `shrink` | `.86` | How shrunk the bar looks inside the glass (smaller = more shrunk, 1 = none) |
 | `stretch` / `stretchMax` | `.065` / `1.4` | Extra width per 1 px/s of speed / maximum stretch (in tab widths) |
 | `squash` / `squashMax` | `9000` / `.14` | How much speed flattens the pill (smaller = flatter) / maximum flattening |
 | `barX` / `barY` | `.035` / `.05` | How much the whole bar grows horizontally / vertically while pressed |
@@ -294,6 +293,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.4.0**: The bar inside the glass keeps its original size while the whole bar grows (`barX` / `barY`), instead of shrinking to 0.86×; the `shrink` option is removed. The bar inside the glass is blurred again while pressed (`--ltb-blur`, like the bar outside); the gap around it still shows the page unblurred.
 - **v2.3.3**: Fixes for the glass at the bar's ends (leftmost / rightmost slot): no faint arc of the bar's rounded edge inside the glass, no horizontal line from the shrunken arc's tip to the glass edge, a round tip instead of a flattened one, and no stray sliver while dragging away from an end. The bar's own glass layer now rounds its corners with `clip-path` instead of `border-radius`.
 - **v2.3.2**: The bar inside the glass is now drawn from an outline computed every frame (`clip-path` for the fill, SVG for the highlight edge): flat in the middle, curving back out in a smooth S near the ends of the glass to join the bar outside, or keeping the shrunken rounded end at the bar's own ends. The highlight edge inside the glass uses a fixed white gradient and does not follow a custom `--ltb-ring`. The bar has no drop shadow by default (`--ltb-shadow: none`); set `--ltb-shadow` to bring one back.
 - **v2.3.1**: Inside the glass, the whole bar now shrinks (rounded ends included) instead of showing two crescents, and the glass is clear: no white tint or sheen, so `--ltb-lift-bg` is no longer used.

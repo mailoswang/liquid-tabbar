@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.3.3 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.4.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -120,7 +120,7 @@
    3. 膠囊：平常的深色膠囊（.ltb-ind）與浮起的玻璃（.ltb-lens）疊在同一位置，
    依 --ltb-g 交叉淡入淡出
    ========================================================================== */
-.ltb-ind, .ltb-lens, .ltb-clip {
+.ltb-ind, .ltb-lens, .ltb-clip, .ltb-lblur {
   position: absolute; left: var(--ltb-pl, 0px); top: var(--ltb-pt, 0px);
   width: var(--ltb-pw, 0px); height: var(--ltb-ph, 0px);
   border-radius: 999px; pointer-events: none;
@@ -143,13 +143,20 @@
 }
 /* 透鏡：玻璃裡的底板。JS 依膠囊位置算出輪廓（中段縮小、兩端以 S 形接回外面的底板），
    用 clip-path 裁出底色；亮邊由 .ltb-edge（SVG）沿同一條輪廓描線 */
-.ltb-bar, .ltb-edge {
+/* 玻璃裡縮小底板的模糊：.ltb-lens 有淡入淡出的 opacity，裡面的 backdrop-filter 只會模糊玻璃自己的內容，
+   所以模糊另外放在玻璃外這一層（同樣的位置與圓角裁切，沒有 opacity），用同一條輪廓裁出形狀 */
+.ltb-lblur { z-index: -2; overflow: hidden }
+.ltb-blur {
+  -webkit-backdrop-filter: var(--ltb-blur); backdrop-filter: var(--ltb-blur);
+  opacity: var(--ltb-g, 0);
+}
+.ltb-bar, .ltb-edge, .ltb-blur {
   position: absolute; left: calc(-1 * var(--ltb-pl, 0px)); top: calc(-1 * var(--ltb-pt, 0px));
   width: var(--ltb-dw, 0px); height: var(--ltb-height);
 }
 .ltb-bar { background: var(--ltb-bg) }
 .ltb-edge { overflow: visible; fill: none; stroke-width: 1 }
-.ltb-noind .ltb-ind, .ltb-noind .ltb-lens, .ltb-noind .ltb-clip { opacity: 0 }
+.ltb-noind .ltb-ind, .ltb-noind .ltb-lens, .ltb-noind .ltb-clip, .ltb-noind .ltb-lblur { opacity: 0 }
 
 /* ==========================================================================
    4. 按鈕與「膠囊蓋到哪裡就變色」
@@ -196,5 +203,5 @@
    5. 無障礙
    ========================================================================== */
 @media (prefers-reduced-transparency: reduce) {
-  .ltb-bg { -webkit-backdrop-filter: none; backdrop-filter: none }
+  .ltb-bg, .ltb-blur { -webkit-backdrop-filter: none; backdrop-filter: none }
 }
