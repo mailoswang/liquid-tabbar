@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.4.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.5.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -33,6 +33,7 @@
   --ltb-font-size: 11px;
   --ltb-font-weight: 600;
   --ltb-pill-pad: 12px;      /* 膠囊比一格寬多少 */
+  --ltb-side-gap: 10px;      /* 左邊圓形按鈕與分頁列的間距 */
 }
 
 .ltb.ltb--light {
@@ -76,6 +77,12 @@
   box-shadow: var(--ltb-shadow);
   touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
   will-change: scale;
+  transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1);
+}
+/* 有左邊圓形按鈕時：整組總寬度不變，分頁列往右讓出「圓鈕直徑 + 間距」 */
+.ltb.ltb-has-side {
+  width: calc(var(--ltb-width) - var(--ltb-height) - var(--ltb-side-gap));
+  margin-left: calc((var(--ltb-height) + var(--ltb-side-gap)) / 2);
 }
 
 /* 底板的玻璃（底色、模糊、亮邊）放在獨立一層：浮起時在膠囊的位置挖空（程度跟著 --ltb-g），
@@ -200,8 +207,44 @@
 }
 
 /* ==========================================================================
+   左邊的圓形按鈕（side）：和底板同一組玻璃。按住分頁列時整條會放大，
+   圓鈕用 --ltb-isx / --ltb-isy 以分頁列中心反向縮放，維持原本的大小與位置
+   ========================================================================== */
+.ltb-side {
+  position: absolute; top: 0; left: calc(-1 * (var(--ltb-height) + var(--ltb-side-gap)));
+  width: var(--ltb-height); height: var(--ltb-height);
+  border: 0; padding: 0; margin: 0; background: none; font: inherit; color: var(--ltb-ink); cursor: pointer;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transform-origin: calc(var(--ltb-height) + var(--ltb-side-gap) + var(--ltb-dw, 0px) / 2) 50%;
+  scale: var(--ltb-isx, 1) var(--ltb-isy, 1);
+  visibility: hidden; pointer-events: none; transition: visibility 0s .3s;
+}
+.ltb-has-side .ltb-side { visibility: visible; pointer-events: auto; transition: none }
+.ltb-side-in {
+  position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%;
+  background: var(--ltb-bg);
+  -webkit-backdrop-filter: var(--ltb-blur); backdrop-filter: var(--ltb-blur);
+  box-shadow: var(--ltb-rim), var(--ltb-shadow);
+  opacity: 0; scale: .6;
+  transition: opacity .25s ease, scale .38s cubic-bezier(.3, 1.4, .5, 1);
+}
+.ltb-side-in::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  padding: 1px; background: var(--ltb-ring);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+}
+.ltb-has-side .ltb-side-in { opacity: 1; scale: 1 }
+.ltb-has-side .ltb-side:active .ltb-side-in { scale: .9; transition-duration: .12s }
+.ltb-side:focus-visible { outline: 0 }
+.ltb-side:focus-visible .ltb-side-in { outline: 2px solid var(--ltb-focus); outline-offset: 4px }
+
+/* ==========================================================================
    5. 無障礙
    ========================================================================== */
 @media (prefers-reduced-transparency: reduce) {
-  .ltb-bg, .ltb-blur { -webkit-backdrop-filter: none; backdrop-filter: none }
+  .ltb-bg, .ltb-blur, .ltb-side-in { -webkit-backdrop-filter: none; backdrop-filter: none }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ltb, .ltb-side-in { transition: none }
 }

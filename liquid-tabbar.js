@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.4.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.5.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -42,6 +42,8 @@
     active: 0,           // 目前選中的 id 或索引；null / -1 代表都不選（膠囊隱藏）
     onSelect: null,      // (item, index, info) 選了另一格（放開瞬間呼叫）
     onReselect: null,    // (item, index, info) 點了已選中的那格
+    side: null,          // 左邊單獨的圓形按鈕 { id, label, icon }（例如返回、搜尋）；null 不顯示
+    onSide: null,        // (side) 點了圓形按鈕
     physics: PHYSICS,
     dragThreshold: 8,    // 手指移動超過幾 px 才算拖動
     clickGuard: 800,     // 手勢結束後擋掉多久內晚到的 click（iOS 會晚送）
@@ -51,7 +53,7 @@
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
-  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-xl", "--ltb-xr", "scale"];
+  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-xl", "--ltb-xr", "--ltb-isx", "--ltb-isy", "scale"];
   let uid = 0;   // SVG 漸層 id 用，同頁多個分頁列不衝突
 
   const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -102,7 +104,8 @@
         '<stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".35" stop-color="#fff" stop-opacity=".16"/>' +
         '<stop offset=".65" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity=".26"/></linearGradient></defs>' +
         `<path stroke="url(#ltb-ring-${uid})"/></svg></span>` +
-        '<span class="ltb-clip" aria-hidden="true"><span class="ltb-copy"></span></span>';
+        '<span class="ltb-clip" aria-hidden="true"><span class="ltb-copy"></span></span>' +
+        '<button type="button" class="ltb-side" tabindex="-1" aria-hidden="true"><span class="ltb-side-in"></span></button>';
       this._copy = el.querySelector(".ltb-copy");
       this._bar = el.querySelector(".ltb-bar");
       this._blur = el.querySelector(".ltb-blur");
@@ -110,13 +113,16 @@
       this._edgeGrad = el.querySelector(".ltb-edge linearGradient");
       this._edgePath = el.querySelector(".ltb-edge path");
       this._clip = el.querySelector(".ltb-clip");
+      this._side = el.querySelector(".ltb-side");
+      this.side = null;
       this._bind();
-      this.set({ items: o.items, active: o.active });
+      this.set({ side: o.side, items: o.items, active: o.active });
     }
 
     /* ---------- 公開 API ---------- */
 
-    set({ items, active } = {}, opts) {
+    set({ items, active, side } = {}, opts) {
+      if (side !== undefined) this.setSide(side);
       if (items) this.setItems(items);
       if (active !== undefined) this.setActive(active, opts);
       return this;
@@ -153,6 +159,23 @@
       return this;
     }
 
+    // 左邊單獨的圓形按鈕：{ id, label, icon } 顯示（分頁列往右讓出位置，總寬度不變）；null 收起
+    setSide(side) {
+      const b = this._side, on = !!side;
+      this.side = side || null;
+      this.el.classList.toggle("ltb-has-side", on);
+      b.tabIndex = on ? 0 : -1;
+      if (on) {
+        b.removeAttribute("aria-hidden");
+        b.dataset.id = side.id == null ? "" : side.id;
+        b.setAttribute("aria-label", side.label || side.id || "");
+        const sig = [side.id, side.label, side.icon].join("\u0000");
+        if (b._ltb !== sig) { b._ltb = sig; b.firstChild.innerHTML = svg(side.icon); }
+      } else b.setAttribute("aria-hidden", "true");
+      this.layout();
+      return this;
+    }
+
     // 選中某格（id 或索引）；null / -1 隱藏膠囊；opts.instant 直接定位
     setActive(key, opts = {}) {
       const i = this._indexOf(key);
@@ -182,7 +205,7 @@
       if (this._pend) clearTimeout(this._pend.timer);
       this._off.forEach(f => f());
       this._css = {};
-      this.el.classList.remove("ltb", "ltb-noind");
+      this.el.classList.remove("ltb", "ltb-noind", "ltb-has-side");
       OWN_PROPS.forEach(p => this.el.style.removeProperty(p));
       this.el.innerHTML = "";
     }
@@ -254,6 +277,8 @@
       put("--ltb-cx", s.x.toFixed(2) + "px");
       put("--ltb-m", (1 + (P.mag - 1) * pc).toFixed(4));
       put("scale", `${(1 + P.barX * p).toFixed(4)} ${(1 + P.barY * p).toFixed(4)}`);
+      put("--ltb-isx", (1 / (1 + P.barX * p)).toFixed(4));            // 圓形按鈕反向縮放，不跟著分頁列放大
+      put("--ltb-isy", (1 / (1 + P.barY * p)).toFixed(4));
       if (pc > 0) this._lensShape(pl, w, h, 1 + P.barX * p, 1 + P.barY * p);
     }
 
@@ -369,7 +394,7 @@
 
       this._off = [
         on(el, "pointerdown", e => {
-          if (this._g || !this.items.length) return;
+          if (this._g || !this.items.length || e.target.closest(".ltb-side")) return;
           const x = localX(e);
           this._g = { id: e.pointerId, x0: x, moved: false, k: slotAt(x) };
           try { el.setPointerCapture(e.pointerId); } catch (_) {}
@@ -400,10 +425,16 @@
           if (this.index >= 0) this._go(this._center(this.index));
         }),
         on(el, "click", e => {
-          if (performance.now() < this._skip) { e.stopPropagation(); e.preventDefault(); }
+          if (performance.now() < this._skip && !e.target.closest(".ltb-side")) { e.stopPropagation(); e.preventDefault(); }
         }, true),
         // 鍵盤 Enter / 空白鍵、輔助技術
         on(el, "click", e => {
+          if (e.target.closest(".ltb-side")) {
+            if (!this.side) return;
+            if (o.onSide) o.onSide(this.side);
+            el.dispatchEvent(new CustomEvent("ltb:side", { detail: { side: this.side } }));
+            return;
+          }
           const b = e.target.closest(".ltb-item");
           if (b) this._choose(this._buttons().indexOf(b), "click");
         }),
@@ -421,7 +452,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.4.0";
+  LiquidTabbar.version = "2.5.0";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;

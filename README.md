@@ -18,16 +18,16 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 
 **[Live demo](https://mailoswang.github.io/liquid-tabbar/)** (open it on a phone and press and drag the bar)
 
-**Contents**: [Install](#install) · [Quick start](#quick-start) · [Customizing](#customizing-for-your-project) · [Page setup](#page-setup) · [Routing](#routing) · [Frameworks](#es-modules-and-frameworks) · [Options](#options) · [Methods](#methods) · [CSS variables](#css-variables) · [Styling hooks](#styling-hooks) · [Physics](#physics) · [Performance](#performance) · [Browser support](#browser-support) · [Limitations](#what-browsers-cant-do) · [Changelog](#changelog)
+**Contents**: [Install](#install) · [Quick start](#quick-start) · [Customizing](#customizing-for-your-project) · [Page setup](#page-setup) · [Routing](#routing) · [Side button](#side-button) · [Frameworks](#es-modules-and-frameworks) · [Options](#options) · [Methods](#methods) · [CSS variables](#css-variables) · [Styling hooks](#styling-hooks) · [Physics](#physics) · [Performance](#performance) · [Browser support](#browser-support) · [Limitations](#what-browsers-cant-do) · [Changelog](#changelog)
 
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins an exact version (`@v2.4.0`), so later releases never change your project unexpectedly. Other choices:
+The URL pins an exact version (`@v2.5.0`), so later releases never change your project unexpectedly. Other choices:
 
 - `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
 - Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -133,12 +133,33 @@ For pages that don't belong to any tab, `tabs.setActive(null)` hides the pill.
 
 `onSelect` fires the moment the finger lifts, while the pill is still animating. If your page is expensive to render and the animation stutters, see [Performance](#performance).
 
+## Side button
+
+A separate round button can sit to the left of the bar, for example a back button on detail pages, or search or edit. The whole group keeps the same total width (`--ltb-width`): the button is as tall as the bar, and the bar shrinks to make room. It uses the same glass as the bar and doesn't grow when the bar is pressed.
+
+```js
+const BACK = '<path d="M15.5 4.5 8 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+
+addEventListener("hashchange", () => {
+  const detail = location.hash.startsWith("#/book/");
+  tabs.set({
+    side: detail ? { id: "back", label: "Back", icon: BACK } : null,   // null hides it
+    items: detail ? ITEMS.filter(a => a.id !== "add") : ITEMS,          // e.g. 4 tabs → 3 tabs
+    active: "home"
+  });
+});
+
+const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.back() });
+```
+
+When the button appears or goes away, the bar's width animates and the button pops in or fades out.
+
 ## ES modules and frameworks
 
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -171,13 +192,16 @@ function Tabs({ items, active, onSelect }) {
 | `clickGuard` | `800` | How long (ms) to swallow late clicks after a gesture (iOS sends clicks late) |
 | `waitForPill` | `false` | For gestures, call `onSelect` only once the pill has slid into place. Turn it on if switching pages is expensive and makes the start of the animation stutter |
 | `arriveDistance` / `arriveTimeout` | `6` / `320` | With `waitForPill`: how close (px) counts as arrived / longest wait (ms) |
+| `side` | `null` | Round button on the left: `{ id, label, icon }` (`label` is its accessible name). `null` shows none. See [Side button](#side-button) |
+| `onSide(side)` | — | The side button was tapped |
 
-You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.detail.item)` and `"ltb:reselect"`.
+You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.detail.item)` and `"ltb:reselect"`, and `"ltb:side"` (`e.detail.side`) for the side button.
 
 ## Methods
 
 ```js
-tabs.set({ items, active })          // update items and selection together
+tabs.set({ side, items, active })    // update the side button, items and selection together
+tabs.setSide({ id, label, icon })    // show the round button on the left; setSide(null) hides it
 tabs.setItems(items)                 // replace items; with the same count only changed tabs are rebuilt
 tabs.setActive("search")             // or an index; { instant: true } skips the animation
 tabs.setActive(null)                 // hide the pill
@@ -186,6 +210,7 @@ tabs.destroy()                       // remove listeners and contents
 tabs.el                              // the bar element
 tabs.index                           // selected index
 tabs.items                           // current items
+tabs.side                            // current side button, or null
 ```
 
 ## CSS variables
@@ -210,6 +235,7 @@ Override the variables on `.ltb` in your CSS (or set them in the element's `styl
 | `--ltb-bottom` / `--ltb-z` | Position (defaults to where the native iOS tab bar sits) and stacking order |
 | `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | Icons and labels |
 | `--ltb-pill-pad` | How much wider the resting pill is than one tab |
+| `--ltb-side-gap` | Gap between the side button and the bar |
 
 Sizes and timing of the animation itself are set through `physics` (below).
 
@@ -223,6 +249,8 @@ To place the bar inside the page instead of fixing it to the bottom, override `p
 | `.ltb-item[data-id="inbox"]` | One tab's button, by item `id` |
 | `.ltb-item[aria-current="page"]` | The selected tab's button |
 | `.ltb.ltb-noind` | The bar while nothing is selected |
+| `.ltb-side` / `.ltb-side-in` | The side button / its glass circle |
+| `.ltb.ltb-has-side` | The bar while the side button is shown |
 
 For example, a badge dot on one tab:
 
@@ -293,6 +321,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.5.0**: New side button: a separate round glass button to the left of the bar (`side`, `onSide`, `setSide`, `ltb:side`, `--ltb-side-gap`). The group keeps its total width; the bar's width animates when the button comes and goes.
 - **v2.4.0**: The bar inside the glass keeps its original size while the whole bar grows (`barX` / `barY`), instead of shrinking to 0.86×; the `shrink` option is removed. The bar inside the glass is blurred again while pressed (`--ltb-blur`, like the bar outside); the gap around it still shows the page unblurred.
 - **v2.3.3**: Fixes for the glass at the bar's ends (leftmost / rightmost slot): no faint arc of the bar's rounded edge inside the glass, no horizontal line from the shrunken arc's tip to the glass edge, a round tip instead of a flattened one, and no stray sliver while dragging away from an end. The bar's own glass layer now rounds its corners with `clip-path` instead of `border-radius`.
 - **v2.3.2**: The bar inside the glass is now drawn from an outline computed every frame (`clip-path` for the fill, SVG for the highlight edge): flat in the middle, curving back out in a smooth S near the ends of the glass to join the bar outside, or keeping the shrunken rounded end at the bar's own ends. The highlight edge inside the glass uses a fixed white gradient and does not follow a custom `--ltb-ring`. The bar has no drop shadow by default (`--ltb-shadow: none`); set `--ltb-shadow` to bring one back.

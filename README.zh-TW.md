@@ -18,16 +18,16 @@
 
 **[線上示範](https://mailoswang.github.io/liquid-tabbar/)**（建議用手機開，按住分頁列左右拖動試試）
 
-**目錄**：[安裝](#安裝) · [快速開始](#快速開始) · [依專案客製](#依專案客製) · [放進頁面時要注意](#放進頁面時要注意) · [配合路由](#配合路由) · [框架](#es-module-與框架) · [選項](#選項) · [方法](#方法) · [外觀變數](#外觀變數) · [樣式掛鉤](#樣式掛鉤) · [動畫參數](#動畫參數physics) · [效能](#效能) · [相容性](#相容性) · [限制](#網頁做不到的效果) · [版本紀錄](#版本紀錄)
+**目錄**：[安裝](#安裝) · [快速開始](#快速開始) · [依專案客製](#依專案客製) · [放進頁面時要注意](#放進頁面時要注意) · [配合路由](#配合路由) · [左邊的圓形按鈕](#左邊的圓形按鈕) · [框架](#es-module-與框架) · [選項](#選項) · [方法](#方法) · [外觀變數](#外觀變數) · [樣式掛鉤](#樣式掛鉤) · [動畫參數](#動畫參數physics) · [效能](#效能) · [相容性](#相容性) · [限制](#網頁做不到的效果) · [版本紀錄](#版本紀錄)
 
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.4.0`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.5.0`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -133,12 +133,33 @@ addEventListener("hashchange", () => {
 
 `onSelect` 在手指放開的瞬間就呼叫，這時膠囊還在動畫中。如果你的頁面渲染很重、讓動畫卡頓，請見[效能](#效能)。
 
+## 左邊的圓形按鈕
+
+分頁列左邊可以多一顆單獨的圓形按鈕，例如進入內頁時的「返回」，或是搜尋、編輯。整組的總寬度不變（`--ltb-width`）：圓鈕直徑等於分頁列高度，分頁列縮短讓出位置。圓鈕和底板是同一組玻璃，按住分頁列時不會跟著放大。
+
+```js
+const BACK = '<path d="M15.5 4.5 8 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+
+addEventListener("hashchange", () => {
+  const detail = location.hash.startsWith("#/book/");
+  tabs.set({
+    side: detail ? { id: "back", label: "回上頁", icon: BACK } : null,   // null 收起
+    items: detail ? ITEMS.filter(a => a.id !== "add") : ITEMS,          // 例如 4 格變 3 格
+    active: "home"
+  });
+});
+
+const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.back() });
+```
+
+圓鈕出現或收起時，分頁列的寬度會有過渡動畫，圓鈕會彈出或淡出。
+
 ## ES module 與框架
 
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.4.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -171,13 +192,16 @@ function Tabs({ items, active, onSelect }) {
 | `clickGuard` | `800` | 手勢後擋掉晚到的 click 多久（ms），iOS 會晚送 click |
 | `waitForPill` | `false` | 手勢換頁時，等膠囊滑到位才呼叫 `onSelect`。換頁很吃效能、讓動畫起步卡住時打開 |
 | `arriveDistance` / `arriveTimeout` | `6` / `320` | 搭配 `waitForPill`：膠囊離目標幾 px 內算到位 / 最多等多久（ms） |
+| `side` | `null` | 左邊的圓形按鈕：`{ id, label, icon }`（`label` 是給輔助技術讀的名稱）。`null` 不顯示。見[左邊的圓形按鈕](#左邊的圓形按鈕) |
+| `onSide(side)` | — | 點了圓形按鈕 |
 
-也可以監聽事件：`tabs.el.addEventListener("ltb:select", e => e.detail.item)`、`"ltb:reselect"`。
+也可以監聽事件：`tabs.el.addEventListener("ltb:select", e => e.detail.item)`、`"ltb:reselect"`，以及圓形按鈕的 `"ltb:side"`（`e.detail.side`）。
 
 ## 方法
 
 ```js
-tabs.set({ items, active })          // 一次更新項目與選中格
+tabs.set({ side, items, active })    // 一次更新圓形按鈕、項目與選中格
+tabs.setSide({ id, label, icon })    // 顯示左邊的圓形按鈕；setSide(null) 收起
 tabs.setItems(items)                 // 換項目；數量相同時只重建變動的格子
 tabs.setActive("search")             // 或索引；{ instant: true } 不播動畫
 tabs.setActive(null)                 // 隱藏膠囊
@@ -186,6 +210,7 @@ tabs.destroy()                       // 移除事件與內容
 tabs.el                              // 分頁列元素
 tabs.index                           // 目前選中的索引
 tabs.items                           // 目前的項目
+tabs.side                            // 目前的圓形按鈕，沒有時為 null
 ```
 
 ## 外觀變數
@@ -210,6 +235,7 @@ tabs.items                           // 目前的項目
 | `--ltb-bottom` / `--ltb-z` | 位置（預設貼齊 iOS 原生分頁列）、層級 |
 | `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | 圖示與文字 |
 | `--ltb-pill-pad` | 平常的膠囊比一格寬多少 |
+| `--ltb-side-gap` | 左邊圓形按鈕與分頁列的間距 |
 
 動畫本身的大小與節奏用 `physics` 調整（見下方）。
 
@@ -223,6 +249,8 @@ tabs.items                           // 目前的項目
 | `.ltb-item[data-id="inbox"]` | 某一格的按鈕，依項目的 `id` |
 | `.ltb-item[aria-current="page"]` | 選中那格的按鈕 |
 | `.ltb.ltb-noind` | 都沒有選中時的分頁列 |
+| `.ltb-side` / `.ltb-side-in` | 左邊的圓形按鈕 / 它的玻璃圓 |
+| `.ltb.ltb-has-side` | 顯示圓形按鈕時的分頁列 |
 
 例如在某一格加上提示紅點：
 
@@ -293,6 +321,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.5.0**：新增左邊的圓形按鈕：分頁列左邊單獨一顆玻璃圓鈕（`side`、`onSide`、`setSide`、`ltb:side`、`--ltb-side-gap`）。整組總寬度不變，圓鈕出現或收起時分頁列寬度有過渡動畫。
 - **v2.4.0**：整條底板放大（`barX` / `barY`）時，玻璃裡的底板維持放大前的原本大小，不再縮到 0.86 倍；移除 `shrink` 選項。按住時玻璃裡的底板恢復模糊（`--ltb-blur`，和外面的底板一樣）；它周圍的空隙仍直接透出清楚的頁面。
 - **v2.3.3**：修正膠囊停在底板兩端（最左／最右格）時的玻璃：玻璃裡不再漏出底板圓角的細弧線、縮小圓弧的尖端不再多一條橫線連到玻璃邊緣、尖端是圓的不會被削平，從兩端拖出來時也不會多出細條。底板玻璃那層改用 `clip-path` 裁圓角，不再用 `border-radius`。
 - **v2.3.2**：玻璃裡的底板改成每幀算出輪廓再畫（底色用 `clip-path`、亮邊用 SVG）：中段平直，靠近玻璃兩端以平滑的 S 形接回外面的底板；在底板本身的盡頭則維持縮小的圓弧。玻璃裡的亮邊用固定的白色漸層，不會跟著自訂的 `--ltb-ring`。底板預設不再有投影（`--ltb-shadow: none`），要的話自己設 `--ltb-shadow`。
