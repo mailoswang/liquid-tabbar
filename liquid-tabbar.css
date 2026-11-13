@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.5.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.5.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -77,7 +77,6 @@
   box-shadow: var(--ltb-shadow);
   touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
   will-change: scale;
-  transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1);
 }
 /* 有左邊圓形按鈕時：整組總寬度不變，分頁列往右讓出「圓鈕直徑 + 間距」 */
 .ltb.ltb-has-side {
@@ -176,6 +175,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 .ltb-item:focus-visible { outline: 2px solid var(--ltb-focus); outline-offset: 4px }
+/* 遮罩也會把元素自己的焦點外框遮掉：鍵盤聚焦的那格暫時不遮（原本的圖示和膠囊裡的變色複本位置重疊，不會重影） */
+.ltb:not(.ltb-noind) .ltb-item:focus-visible { -webkit-mask-image: none; mask-image: none }
 .ltb-ic { width: var(--ltb-icon); height: var(--ltb-icon); flex: none }
 .ltb-item span, .ltb-copy i { font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100% }
 
@@ -217,16 +218,15 @@
   -webkit-tap-highlight-color: transparent; touch-action: manipulation;
   transform-origin: calc(var(--ltb-height) + var(--ltb-side-gap) + var(--ltb-dw, 0px) / 2) 50%;
   scale: var(--ltb-isx, 1) var(--ltb-isy, 1);
-  visibility: hidden; pointer-events: none; transition: visibility 0s .3s;
+  visibility: hidden; pointer-events: none;
 }
-.ltb-has-side .ltb-side { visibility: visible; pointer-events: auto; transition: none }
+.ltb-has-side .ltb-side { visibility: visible; pointer-events: auto }
 .ltb-side-in {
   position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%;
   background: var(--ltb-bg);
   -webkit-backdrop-filter: var(--ltb-blur); backdrop-filter: var(--ltb-blur);
   box-shadow: var(--ltb-rim), var(--ltb-shadow);
   opacity: 0; scale: .6;
-  transition: opacity .25s ease, scale .38s cubic-bezier(.3, 1.4, .5, 1);
 }
 .ltb-side-in::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -235,7 +235,15 @@
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
 }
 .ltb-has-side .ltb-side-in { opacity: 1; scale: 1 }
-.ltb-has-side .ltb-side:active .ltb-side-in { scale: .9; transition-duration: .12s }
+.ltb-has-side .ltb-side:active .ltb-side-in { scale: .9 }
+/* 動態效果只在使用者沒有要求減少動態時才加上（分頁列寬度、圓鈕彈出／收起） */
+@media (prefers-reduced-motion: no-preference) {
+  .ltb { transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1) }
+  .ltb-side { transition: visibility 0s .3s }
+  .ltb-has-side .ltb-side { transition: none }
+  .ltb-side-in { transition: opacity .25s ease, scale .38s cubic-bezier(.3, 1.4, .5, 1) }
+  .ltb-has-side .ltb-side:active .ltb-side-in { transition-duration: .12s }
+}
 .ltb-side:focus-visible { outline: 0 }
 .ltb-side:focus-visible .ltb-side-in { outline: 2px solid var(--ltb-focus); outline-offset: 4px }
 
@@ -244,7 +252,4 @@
    ========================================================================== */
 @media (prefers-reduced-transparency: reduce) {
   .ltb-bg, .ltb-blur, .ltb-side-in { -webkit-backdrop-filter: none; backdrop-filter: none }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ltb, .ltb-side-in { transition: none }
 }

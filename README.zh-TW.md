@@ -23,11 +23,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.1/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.1/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.5.0`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.5.1`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.1/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.1/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -159,7 +159,7 @@ const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.b
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.5.1/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -321,6 +321,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.5.1**：分頁的鍵盤焦點外框恢復可見（分頁的遮罩也把它自己的外框遮掉了）。分頁列寬度與圓形按鈕的過渡動畫，只在使用者沒有要求減少動態時才加上。
 - **v2.5.0**：新增左邊的圓形按鈕：分頁列左邊單獨一顆玻璃圓鈕（`side`、`onSide`、`setSide`、`ltb:side`、`--ltb-side-gap`）。整組總寬度不變，圓鈕出現或收起時分頁列寬度有過渡動畫。
 - **v2.4.0**：整條底板放大（`barX` / `barY`）時，玻璃裡的底板維持放大前的原本大小，不再縮到 0.86 倍；移除 `shrink` 選項。按住時玻璃裡的底板恢復模糊（`--ltb-blur`，和外面的底板一樣）；它周圍的空隙仍直接透出清楚的頁面。
 - **v2.3.3**：修正膠囊停在底板兩端（最左／最右格）時的玻璃：玻璃裡不再漏出底板圓角的細弧線、縮小圓弧的尖端不再多一條橫線連到玻璃邊緣、尖端是圓的不會被削平，從兩端拖出來時也不會多出細條。底板玻璃那層改用 `clip-path` 裁圓角，不再用 `border-radius`。

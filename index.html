@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>liquid-tabbar · Native Liquid Glass, on the web</title>
-<link rel="stylesheet" href="liquid-tabbar.css?v=2.5.0">
+<link rel="stylesheet" href="liquid-tabbar.css?v=2.5.1">
 <style>
  :root{--bg:#101012;--ink:#f4f4f5;--sub:#a1a1aa;--card:#1c1c20;--line:rgba(255,255,255,.1)}
  :root[data-theme="light"]{--bg:#f3f3f3;--ink:#141414;--sub:#6d6d6d;--card:#fff;--line:rgba(0,0,0,.1)}
@@ -33,10 +33,10 @@
  <p data-t="intro"></p>
 
  <div class="panel">
-  <div class="row"><b data-t="count"></b><span id="count"></span></div>
-  <div class="row"><b data-t="theme"></b><span id="theme"></span></div>
-  <div class="row"><b data-t="labels"></b><span id="labels"></span></div>
-  <div class="row"><b data-t="side"></b><span id="side"></span></div>
+  <div class="row"><b id="l-count" data-t="count"></b><span id="count" role="group" aria-labelledby="l-count"></span></div>
+  <div class="row"><b id="l-theme" data-t="theme"></b><span id="theme" role="group" aria-labelledby="l-theme"></span></div>
+  <div class="row"><b id="l-labels" data-t="labels"></b><span id="labels" role="group" aria-labelledby="l-labels"></span></div>
+  <div class="row"><b id="l-side" data-t="side"></b><span id="side" role="group" aria-labelledby="l-side"></span></div>
   <div class="row"><b data-t="accent"></b><input type="color" id="accent" value="#ff3d47"></div>
   <div id="log"></div>
  </div>
@@ -46,14 +46,14 @@
 
 <nav id="bar"></nav>
 
-<script src="liquid-tabbar.js?v=2.5.0"></script><!-- ?v= 跟著函式庫版本改，瀏覽器才不會拿快取的舊版配新頁面 -->
+<script src="liquid-tabbar.js?v=2.5.1"></script><!-- ?v= 跟著函式庫版本改，瀏覽器才不會拿快取的舊版配新頁面 -->
 <script>
  // All text on the page, per language. English is the default
  const TEXT = {
   en: {
    title: "liquid-tabbar · Native Liquid Glass, on the web",
    intro: "The iOS Liquid Glass tab bar, recreated on the web. Tap to switch, or press and drag sideways: icons under the pill change color, and the tab switches when you let go. \"Side button\" adds a separate round button to the left of the bar (for example, back on a detail page).",
-   count: "Tabs", theme: "Theme", labels: "Labels", side: "Side button", accent: "Accent",
+   lang: "Language", count: "Tabs", theme: "Theme", labels: "Labels", side: "Side button", accent: "Accent",
    dark: "Dark", light: "Light", show: "Show", iconsOnly: "Icons only",
    none: "None", back: "Back", search: "Search", edit: "Edit",
    items: { home: "Home", search: "Search", likes: "Likes", inbox: "Inbox", me: "Me" },
@@ -65,7 +65,7 @@
   zh: {
    title: "liquid-tabbar · 網頁上的原生液態玻璃",
    intro: "在網頁上模擬 iOS 原生液態玻璃（Liquid Glass）分頁列。按一下切換，按住可以左右拖動，膠囊蓋到的圖示會變色，鬆手才切換。「左邊按鈕」可以在分頁列左邊加一顆單獨的圓形按鈕（例如進入內頁時的返回）。",
-   count: "數量", theme: "外觀", labels: "文字", side: "左邊按鈕", accent: "強調色",
+   lang: "語言", count: "數量", theme: "外觀", labels: "文字", side: "左邊按鈕", accent: "強調色",
    dark: "深色", light: "淺色", show: "顯示", iconsOnly: "只有圖示",
    none: "無", back: "返回", search: "搜尋", edit: "編輯",
    items: { home: "首頁", search: "搜尋", likes: "收藏", inbox: "通知", me: "我的" },
@@ -125,7 +125,7 @@
  const groups = [];
  const opts = (host, list, get, set) => {
   const el = document.getElementById(host), btns = [];
-  const paint = () => btns.forEach((b, i) => b.classList.toggle("on", list[i][1] === get()));
+  const paint = () => btns.forEach((b, i) => { const on = list[i][1] === get(); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
   list.forEach(([key, v]) => {
    const b = document.createElement("button");
    b.className = "opt"; b.type = "button";
@@ -154,6 +154,7 @@
   const t = T();
   document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
   document.title = t.title;
+  document.getElementById("lang").setAttribute("aria-label", t.lang);
   document.querySelectorAll("[data-t]").forEach(el => { el.textContent = t[el.dataset.t]; });
   groups.forEach(({ list, btns }) => btns.forEach((b, i) => { b.textContent = t[list[i][0]] || list[i][0]; }));
   if (!logged) document.getElementById("log").textContent = t.hint;
