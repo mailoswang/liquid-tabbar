@@ -23,11 +23,11 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins an exact version (`@v2.6.2`), so later releases never change your project unexpectedly. Other choices:
+The URL pins an exact version (`@v2.7.0`), so later releases never change your project unexpectedly. Other choices:
 
 - `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
 - Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -159,7 +159,7 @@ When the button appears or goes away, the bar's width animates and the button po
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -194,8 +194,11 @@ function Tabs({ items, active, onSelect }) {
 | `arriveDistance` / `arriveTimeout` | `6` / `320` | With `waitForPill`: how close (px) counts as arrived / longest wait (ms) |
 | `side` | `null` | Round button on the left: `{ id, label, icon }` (`label` is its accessible name). `null` shows none. See [Side button](#side-button) |
 | `onSide(side)` | — | The side button was tapped |
+| `minimizeOnScroll` | `false` | Shrink the whole bar (side button included) as the page scrolls down; restore on scrolling up, at the top, or as soon as the bar is tapped |
+| `scrollTarget` | window | What to watch for scrolling: an element or a selector (for pages that scroll a container instead of the window) |
+| `minimizeDistance` | `24` | How far (px) to scroll in one direction before the bar shrinks or comes back |
 
-You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.detail.item)` and `"ltb:reselect"`, and `"ltb:side"` (`e.detail.side`) for the side button.
+You can also listen for events: `tabs.el.addEventListener("ltb:select", e => e.detail.item)` and `"ltb:reselect"`, `"ltb:side"` (`e.detail.side`) for the side button, and `"ltb:minimize"` (`e.detail.minimized`).
 
 ## Methods
 
@@ -211,6 +214,9 @@ tabs.el                              // the bar element
 tabs.index                           // selected index
 tabs.items                           // current items
 tabs.side                            // current side button, or null
+tabs.setMinimized(true)              // shrink / restore the bar by hand
+tabs.setMinimizeOnScroll(true, el)   // turn shrink-on-scroll on or off; el is the scroll container (default: window)
+tabs.minimized                       // whether the bar is currently shrunk
 ```
 
 ## CSS variables
@@ -236,6 +242,7 @@ Override the variables on `.ltb` in your CSS (or set them in the element's `styl
 | `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | Icons and labels |
 | `--ltb-pill-pad` | How much wider the resting pill is than one tab |
 | `--ltb-side-gap` | Gap between the side button and the bar |
+| `--ltb-min-scale` | Size of the bar while shrunk on scroll (default `.84`) |
 
 Sizes and timing of the animation itself are set through `physics` (below).
 
@@ -251,6 +258,7 @@ To place the bar inside the page instead of fixing it to the bottom, override `p
 | `.ltb.ltb-noind` | The bar while nothing is selected |
 | `.ltb-side` / `.ltb-side-in` | The side button / its glass circle |
 | `.ltb.ltb-has-side` | The bar while the side button is shown |
+| `.ltb.ltb-min` | The bar while shrunk on scroll |
 
 For example, a badge dot on one tab:
 
@@ -325,6 +333,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.7.0**: Shrink on scroll: with `minimizeOnScroll`, the whole bar (side button included) shrinks to `--ltb-min-scale` as the page scrolls down, keeping its bottom and center in place, and comes back on scrolling up, at the top, or as soon as the bar (or the side button) is tapped. New `scrollTarget`, `minimizeDistance`, `setMinimized()`, `setMinimizeOnScroll()`, `minimized`, event `ltb:minimize`, class `.ltb-min`.
 - **v2.6.2**: The side button lifts like the pill when pressed (tap or long press): it grows to about 1.22× with the lifted glass's outline and shadow, stays up at least `hold` ms, and springs back on release. Keyboard activation plays it too. It no longer shrinks on press.
 - **v2.6.1**: Stronger brake squash while dragging (`brakeW` .25, `brakeH` .15). The leading end of the glass stays put and only the trailing end is pushed in. It recovers more slowly and softly with its own spring (`release`).
 - **v2.6.0**: Brake squash: as the glass slows down it squashes (shorter, taller), bounces once and recovers. Strong while dragging, mostly a slight inward squeeze when the pill slides by itself after a tap. New physics `brake`, `brakeRef`, `brakeW` / `brakeH`, `brakeTapW` / `brakeTapH`.

@@ -23,11 +23,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.6.2`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.7.0`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -159,7 +159,7 @@ const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.b
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -194,8 +194,11 @@ function Tabs({ items, active, onSelect }) {
 | `arriveDistance` / `arriveTimeout` | `6` / `320` | 搭配 `waitForPill`：膠囊離目標幾 px 內算到位 / 最多等多久（ms） |
 | `side` | `null` | 左邊的圓形按鈕：`{ id, label, icon }`（`label` 是給輔助技術讀的名稱）。`null` 不顯示。見[左邊的圓形按鈕](#左邊的圓形按鈕) |
 | `onSide(side)` | — | 點了圓形按鈕 |
+| `minimizeOnScroll` | `false` | 頁面往下捲動時整組縮小（含左邊圓鈕）；往上捲、回到頂端，或一點到分頁列就恢復 |
+| `scrollTarget` | 視窗 | 監聽哪個捲動區域：元素或選擇器（頁面捲動的是容器而不是視窗時） |
+| `minimizeDistance` | `24` | 往同一方向捲動多少 px 才縮小或恢復 |
 
-也可以監聽事件：`tabs.el.addEventListener("ltb:select", e => e.detail.item)`、`"ltb:reselect"`，以及圓形按鈕的 `"ltb:side"`（`e.detail.side`）。
+也可以監聽事件：`tabs.el.addEventListener("ltb:select", e => e.detail.item)`、`"ltb:reselect"`，圓形按鈕的 `"ltb:side"`（`e.detail.side`），以及縮小狀態的 `"ltb:minimize"`（`e.detail.minimized`）。
 
 ## 方法
 
@@ -211,6 +214,9 @@ tabs.el                              // 分頁列元素
 tabs.index                           // 目前選中的索引
 tabs.items                           // 目前的項目
 tabs.side                            // 目前的圓形按鈕，沒有時為 null
+tabs.setMinimized(true)              // 手動縮小／恢復
+tabs.setMinimizeOnScroll(true, el)   // 開關捲動縮小；el 是捲動容器（預設視窗）
+tabs.minimized                       // 目前是否縮小
 ```
 
 ## 外觀變數
@@ -236,6 +242,7 @@ tabs.side                            // 目前的圓形按鈕，沒有時為 nul
 | `--ltb-icon` / `--ltb-gap` / `--ltb-font-size` / `--ltb-font-weight` | 圖示與文字 |
 | `--ltb-pill-pad` | 平常的膠囊比一格寬多少 |
 | `--ltb-side-gap` | 左邊圓形按鈕與分頁列的間距 |
+| `--ltb-min-scale` | 捲動縮小時整組的大小（預設 `.84`） |
 
 動畫本身的大小與節奏用 `physics` 調整（見下方）。
 
@@ -251,6 +258,7 @@ tabs.side                            // 目前的圓形按鈕，沒有時為 nul
 | `.ltb.ltb-noind` | 都沒有選中時的分頁列 |
 | `.ltb-side` / `.ltb-side-in` | 左邊的圓形按鈕 / 它的玻璃圓 |
 | `.ltb.ltb-has-side` | 顯示圓形按鈕時的分頁列 |
+| `.ltb.ltb-min` | 捲動縮小時的分頁列 |
 
 例如在某一格加上提示紅點：
 
@@ -325,6 +333,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.7.0**：捲動縮小：開啟 `minimizeOnScroll` 後，頁面往下捲動時整組（含左邊圓鈕）縮小到 `--ltb-min-scale`，底部與中央不動；往上捲、回到頂端，或一點到分頁列（含圓鈕）就恢復。新增 `scrollTarget`、`minimizeDistance`、`setMinimized()`、`setMinimizeOnScroll()`、`minimized`、事件 `ltb:minimize`、class `.ltb-min`。
 - **v2.6.2**：左邊的圓形按鈕按下時（輕按或長按）和膠囊一樣浮起：放大到約 1.22 倍、加上浮起玻璃的外框與陰影，至少維持 `hold` 毫秒，放開後帶回彈縮回；鍵盤操作也會播一次。不再是按下縮小。
 - **v2.6.1**：拖動時的煞車擠壓加大（`brakeW` .25、`brakeH` .15），前進方向那端不動、只有後端被擠過去；恢復改用自己的彈簧（`release`），更慢、更柔和。
 - **v2.6.0**：煞車擠壓：玻璃減速時被擠壓（左右變短、上下撐大），彈一下再恢復。拖動時明顯，點擊後膠囊自己滑過去時主要只是微微往內擠。新增動畫參數 `brake`、`brakeRef`、`brakeW` / `brakeH`、`brakeTapW` / `brakeTapH`。

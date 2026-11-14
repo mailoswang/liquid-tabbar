@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.6.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -57,7 +57,10 @@
     clickGuard: 800,     // 手勢結束後擋掉多久內晚到的 click（iOS 會晚送）
     waitForPill: false,  // true：手勢換頁時等膠囊滑到位才呼叫 onSelect（換頁很吃效能時，動畫才不會在起步時卡住）
     arriveDistance: 6,   // waitForPill：膠囊離目標幾 px 內算到位
-    arriveTimeout: 320   // waitForPill：最多等多久（ms）
+    arriveTimeout: 320,  // waitForPill：最多等多久（ms）
+    minimizeOnScroll: false, // true：頁面往下捲動時整組縮小（--ltb-min-scale），往上捲或回到頂端時恢復
+    scrollTarget: null,      // 監聽哪個捲動區域：元素或選擇器；預設是整個視窗
+    minimizeDistance: 24     // 往同一方向累積捲動多少 px 才縮小／恢復（避免手指微抖來回切換）
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
@@ -126,7 +129,10 @@
       this._side = el.querySelector(".ltb-side");
       this.side = null;
       this._bind();
+      this.minimized = false;
+      this._scrollOff = null;
       this.set({ side: o.side, items: o.items, active: o.active });
+      if (o.minimizeOnScroll) this.setMinimizeOnScroll(true, o.scrollTarget);
     }
 
     /* ---------- 公開 API ---------- */
@@ -186,6 +192,37 @@
       return this;
     }
 
+    // 縮小／恢復整組分頁列（含左邊的圓形按鈕）
+    setMinimized(on) {
+      on = !!on;
+      if (on === this.minimized) return this;
+      this.minimized = on;
+      this.el.classList.toggle("ltb-min", on);
+      this.el.dispatchEvent(new CustomEvent("ltb:minimize", { detail: { minimized: on } }));
+      return this;
+    }
+
+    // 捲動時自動縮小：往下累積捲動 minimizeDistance px 縮小，往上同樣距離或回到頂端時恢復
+    setMinimizeOnScroll(on, target) {
+      if (this._scrollOff) { this._scrollOff(); this._scrollOff = null; }
+      if (!on) { this.setMinimized(false); return this; }
+      if (typeof target === "string") target = document.querySelector(target);
+      const src = target || window, isWin = src === window;
+      const pos = () => isWin ? (window.scrollY || document.documentElement.scrollTop) : src.scrollTop;
+      let last = pos(), acc = 0;
+      const onScroll = () => {
+        const y = pos(), d = y - last, dist = this.options.minimizeDistance;
+        last = y;
+        if (y <= 4) { acc = 0; this.setMinimized(false); return; }      // 回到頂端（含 iOS 回彈的負值）
+        acc = d > 0 ? Math.max(0, acc) + d : Math.min(0, acc) + d;
+        if (acc > dist) this.setMinimized(true);
+        else if (acc < -dist) this.setMinimized(false);
+      };
+      src.addEventListener("scroll", onScroll, { passive: true });
+      this._scrollOff = () => src.removeEventListener("scroll", onScroll);
+      return this;
+    }
+
     // 選中某格（id 或索引）；null / -1 隱藏膠囊；opts.instant 直接定位
     setActive(key, opts = {}) {
       const i = this._indexOf(key);
@@ -214,9 +251,10 @@
       cancelAnimationFrame(this._raf);
       if (this._pend) clearTimeout(this._pend.timer);
       this._off.forEach(f => f());
+      if (this._scrollOff) this._scrollOff();
       clearTimeout(this._sideT);
       this._css = {};
-      this.el.classList.remove("ltb", "ltb-noind", "ltb-has-side");
+      this.el.classList.remove("ltb", "ltb-noind", "ltb-has-side", "ltb-min");
       OWN_PROPS.forEach(p => this.el.style.removeProperty(p));
       this.el.innerHTML = "";
     }
@@ -429,6 +467,7 @@
 
       this._off = [
         on(el, "pointerdown", e => {
+          this.setMinimized(false);                 // 縮小時只要點到分頁列（含圓鈕）就恢復原尺寸
           if (e.target.closest(".ltb-side")) { this._sidePress(); return; }
           if (this._g || !this.items.length) return;
           const x = localX(e);
@@ -465,6 +504,7 @@
         }, true),
         // 鍵盤 Enter / 空白鍵、輔助技術
         on(el, "click", e => {
+          this.setMinimized(false);
           if (e.target.closest(".ltb-side")) {
             if (!this.side) return;
             if (e.detail === 0) { this._sidePress(); this._sideRelease(); }   // 鍵盤操作也播一次浮起
@@ -492,7 +532,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.6.2";
+  LiquidTabbar.version = "2.7.0";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;

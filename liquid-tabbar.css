@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.6.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -34,6 +34,7 @@
   --ltb-font-weight: 600;
   --ltb-pill-pad: 12px;      /* 膠囊比一格寬多少 */
   --ltb-side-gap: 10px;      /* 左邊圓形按鈕與分頁列的間距 */
+  --ltb-min-scale: .84;      /* 捲動縮小時整組的大小 */
 }
 
 .ltb.ltb--light {
@@ -76,8 +77,16 @@
   border: 0; border-radius: 999px;
   box-shadow: var(--ltb-shadow);
   touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
-  will-change: scale;
+  will-change: scale, transform;
 }
+/* 縮小（捲動時）：整組等比例縮小，底部與水平中央不動。不改 transform-origin（按住時的放大要以中央為準），
+   改用平移補回：縮放後往下移 (1 - s) × 高度 / 2；有左邊圓鈕時再往左補，讓整組（含圓鈕）的中央不動 */
+.ltb.ltb-min {
+  --ltb-ms: var(--ltb-min-scale);
+  --ltb-mo: 0px;
+  transform: translate(calc(-1 * var(--ltb-mo) * (1 - var(--ltb-ms))), calc(var(--ltb-height) * (1 - var(--ltb-ms)) / 2)) scale(var(--ltb-ms));
+}
+.ltb.ltb-min.ltb-has-side { --ltb-mo: calc((var(--ltb-height) + var(--ltb-side-gap)) / 2) }
 /* 有左邊圓形按鈕時：整組總寬度不變，分頁列往右讓出「圓鈕直徑 + 間距」 */
 .ltb.ltb-has-side {
   width: calc(var(--ltb-width) - var(--ltb-height) - var(--ltb-side-gap));
@@ -242,7 +251,7 @@
 }
 /* 動態效果只在使用者沒有要求減少動態時才加上（分頁列寬度、圓鈕彈出／收起） */
 @media (prefers-reduced-motion: no-preference) {
-  .ltb { transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1) }
+  .ltb { transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1), transform .42s cubic-bezier(.3, 1.25, .5, 1) }
   .ltb-side { transition: visibility 0s .3s }
   .ltb-has-side .ltb-side { transition: none }
   .ltb-side-in { transition: opacity .25s ease, scale .42s cubic-bezier(.3, 1.5, .5, 1), box-shadow .3s ease }
