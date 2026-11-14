@@ -1,4 +1,4 @@
-# liquid-tabbar · 網頁上的原生液態玻璃
+# liquid-tabbar on web · 網頁上的 iOS 液態玻璃分頁列
 
 [English](README.md) | **繁體中文**
 
@@ -16,15 +16,15 @@
 - **立即換頁**：放開的瞬間就呼叫 `onSelect`，跟 iOS 一樣，頁面切換時動畫繼續播完；頁面很重時也可以改成等膠囊到位（`waitForPill`）
 - 格數、圖示、文字、顏色、尺寸、動畫都可以調整
 
-**[線上示範](https://mailoswang.github.io/liquid-tabbar/?lang=zh)**（建議用手機開，按住分頁列左右拖動試試）
+**[線上示範](https://mailoswang.github.io/liquid-tabbar-on-web/?lang=zh)**（建議用手機開，按住分頁列左右拖動試試）
 
 **目錄**：[安裝](#安裝) · [快速開始](#快速開始) · [依專案客製](#依專案客製) · [放進頁面時要注意](#放進頁面時要注意) · [配合路由](#配合路由) · [左邊的圓形按鈕](#左邊的圓形按鈕) · [框架](#es-module-與框架) · [選項](#選項) · [方法](#方法) · [外觀變數](#外觀變數) · [樣式掛鉤](#樣式掛鉤) · [動畫參數](#動畫參數physics) · [效能](#效能) · [相容性](#相容性) · [限制](#網頁做不到的效果) · [版本紀錄](#版本紀錄)
 
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.js"></script>
 ```
 
 網址裡固定完整版本號（`@v2.7.5`），之後函式庫更新也不會突然改變你的專案。其他選擇：
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -159,7 +159,7 @@ const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.b
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 

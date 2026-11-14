@@ -1,4 +1,4 @@
-# liquid-tabbar · Native Liquid Glass, on the web
+# liquid-tabbar on web · The iOS Liquid Glass tab bar, for the web
 
 **English** | [繁體中文](README.zh-TW.md)
 
@@ -16,15 +16,15 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 - **Instant switch**: `onSelect` fires the moment you let go, just like iOS, and the animation keeps playing while your page changes. Heavy pages can wait for the pill instead (`waitForPill`).
 - **Configurable**: tab count, icons, labels, colors, sizes and motion.
 
-**[Live demo](https://mailoswang.github.io/liquid-tabbar/)** (open it on a phone and press and drag the bar)
+**[Live demo](https://mailoswang.github.io/liquid-tabbar-on-web/)** (open it on a phone and press and drag the bar)
 
 **Contents**: [Install](#install) · [Quick start](#quick-start) · [Customizing](#customizing-for-your-project) · [Page setup](#page-setup) · [Routing](#routing) · [Side button](#side-button) · [Frameworks](#es-modules-and-frameworks) · [Options](#options) · [Methods](#methods) · [CSS variables](#css-variables) · [Styling hooks](#styling-hooks) · [Physics](#physics) · [Performance](#performance) · [Browser support](#browser-support) · [Limitations](#what-browsers-cant-do) · [Changelog](#changelog)
 
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.js"></script>
 ```
 
 The URL pins an exact version (`@v2.7.5`), so later releases never change your project unexpectedly. Other choices:
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -159,7 +159,7 @@ When the button appears or goes away, the bar's width animates and the button po
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.5/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v2.7.5/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 

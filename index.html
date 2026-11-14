@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>liquid-tabbar · Native Liquid Glass, on the web</title>
+<title>liquid-tabbar on web · The iOS Liquid Glass tab bar, for the web</title>
 <meta name="description" content="The iOS Liquid Glass tab bar, recreated on the web. Vanilla JS + CSS, zero dependencies.">
 <link rel="stylesheet" href="liquid-tabbar.css?v=2.7.5">
 <style>
@@ -196,13 +196,13 @@
 
 <header class="top">
  <div class="wrap">
-  <a class="logo" href="#"><i aria-hidden="true"></i>liquid-tabbar</a>
+  <a class="logo" href="#"><i aria-hidden="true"></i>liquid-tabbar <span style="font-weight:400;opacity:.6">on web</span></a>
   <nav aria-label="Sections">
    <a href="#demos" data-t="navDemo"></a>
    <a href="#playground" data-t="navPlay"></a>
    <a href="#features" data-t="navFeat"></a>
    <a href="#start" data-t="navStart"></a>
-   <a href="https://github.com/mailoswang/liquid-tabbar">GitHub</a>
+   <a href="https://github.com/mailoswang/liquid-tabbar-on-web">GitHub</a>
   </nav>
   <div class="tools">
    <span id="lang" class="seg" role="group" aria-label="Language"></span>
@@ -331,12 +331,12 @@
 
 <footer>
  <div class="wrap">
-  <a class="logo" href="#"><i aria-hidden="true"></i>liquid-tabbar</a>
+  <a class="logo" href="#"><i aria-hidden="true"></i>liquid-tabbar <span style="font-weight:400;opacity:.6">on web</span></a>
   <span data-t="foot"></span>
   <div class="links">
    <a data-doc="top">README</a>
    <a data-doc="changelog" data-t="changelog"></a>
-   <a href="https://github.com/mailoswang/liquid-tabbar">GitHub</a>
+   <a href="https://github.com/mailoswang/liquid-tabbar-on-web">GitHub</a>
    <a href="liquid-tabbar.js">liquid-tabbar.js</a>
   </div>
  </div>
@@ -345,12 +345,12 @@
 <script src="liquid-tabbar.js?v=2.7.5"></script><!-- ?v= 跟著函式庫版本改，瀏覽器才不會拿快取的舊版配新頁面 -->
 <script>
  const VER = LiquidTabbar.version;
- const REPO = "https://github.com/mailoswang/liquid-tabbar";
+ const REPO = "https://github.com/mailoswang/liquid-tabbar-on-web";
 
  // All text on the page, per language. English is the default
  const TEXT = {
   en: {
-   title: "liquid-tabbar · Native Liquid Glass, on the web",
+   title: "liquid-tabbar on web · The iOS Liquid Glass tab bar, for the web",
    navDemo: "Demos", navPlay: "Playground", navFeat: "Features", navStart: "Get started",
    eyebrow: "Vanilla JS + CSS",
    h1: "The iOS tab bar.<br>Now on the web.",
@@ -404,7 +404,7 @@
    theme_to_dark: "Switch to dark", theme_to_light: "Switch to light", lang: "Language"
   },
   zh: {
-   title: "liquid-tabbar · 網頁上的原生液態玻璃",
+   title: "liquid-tabbar on web · 網頁上的 iOS 液態玻璃分頁列",
    navDemo: "示範", navPlay: "遊樂場", navFeat: "特色", navStart: "開始使用",
    eyebrow: "原生 JS + CSS",
    h1: "iOS 的分頁列，<br>現在放進網頁。",
@@ -672,7 +672,7 @@
  });
 
  // Static code samples (version comes from the loaded library)
- const CDN = `https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v${VER}`;
+ const CDN = `https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar-on-web@v${VER}`;
  function writeSteps() {
   const t = T(), zh = lang === "zh";
   document.getElementById("code1").textContent = `<link rel="stylesheet" href="${CDN}/liquid-tabbar.min.css">\n<script src="${CDN}/liquid-tabbar.min.js"><\/script>`;

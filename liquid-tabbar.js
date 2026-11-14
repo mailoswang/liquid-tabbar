@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.5 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.5 | MIT | https://github.com/mailoswang/liquid-tabbar-on-web */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
