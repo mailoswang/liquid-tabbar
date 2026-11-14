@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.3 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.4 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -210,7 +210,7 @@
 
     // 捲動時自動縮小：往下累積捲動 minimizeDistance px 縮小，往上同樣距離或回到頂端時恢復
     setMinimizeOnScroll(on, target) {
-      if (this._scrollOff) { this._scrollOff(); this._scrollOff = null; }
+      if (this._scrollOff) { this._scrollOff(); this._scrollOff = this._scrollSync = null; }
       if (!on) { this.setMinimized(false); return this; }
       if (typeof target === "string") target = document.querySelector(target);
       const src = target || window, isWin = src === window;
@@ -226,6 +226,13 @@
       };
       src.addEventListener("scroll", onScroll, { passive: true });
       this._scrollOff = () => src.removeEventListener("scroll", onScroll);
+      this._scrollSync = () => { last = pos(); acc = 0; };
+      return this;
+    }
+
+    // 網頁用程式改了捲動位置（例如換頁後還原原本的位置）後呼叫：那次捲動不算使用者往下捲，不會縮小
+    syncScroll() {
+      if (this._scrollSync) this._scrollSync();
       return this;
     }
 
@@ -560,7 +567,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.7.3";
+  LiquidTabbar.version = "2.7.4";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;
