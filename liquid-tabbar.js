@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.3 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -26,6 +26,7 @@
     settle: { k: 260, zeta: .46 },  // 落定：較慢、明顯回彈一次（錄影 250–500 ms）
     brake:  { k: 520, zeta: .6 },   // 煞車擠壓：擠進去的彈簧（快）
     release: { k: 60, zeta: .85 },  // 煞車擠壓：恢復的彈簧（慢、柔和、幾乎不彈）
+    side:   { k: 320, zeta: .78 },  // 左邊圓鈕出現／收起（分頁列同步讓位）：略過衝，圓鈕有小小的彈跳
     growW: 1.3,      // 浮起時膠囊變寬倍率
     growH: 1.33,     // 浮起時膠囊變高倍率（超出底板上下緣）
     mag: 1,          // 玻璃下圖示縮放倍率（1：跟著底板一起放大；>1 再放大、<1 縮小）
@@ -64,7 +65,7 @@
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
-  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-xl", "--ltb-xr", "--ltb-isx", "--ltb-isy", "--ltb-gw", "scale"];
+  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-xl", "--ltb-xr", "--ltb-isx", "--ltb-isy", "--ltb-gw", "--ltb-sp", "scale"];
   let uid = 0;   // SVG 漸層 id 用，同頁多個分頁列不衝突
 
   const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -92,7 +93,7 @@
       const o = Object.assign({}, DEFAULTS, options);
       o.physics = Object.assign({}, PHYSICS, options.physics);
       const ph = options.physics || {};
-      for (const k of ["move", "lift", "settle", "brake", "release"]) o.physics[k] = Object.assign({}, PHYSICS[k], ph[k]);
+      for (const k of ["move", "lift", "settle", "brake", "release", "side"]) o.physics[k] = Object.assign({}, PHYSICS[k], ph[k]);
       this.el = el;
       this.options = o;
       this.items = [];
@@ -101,7 +102,8 @@
       // 動畫狀態：x 膠囊中心、v 速度、tx 目標；p 浮起程度（可過衝）、pv 其速度
       // b 煞車擠壓量（彈簧，可過衝）、bv 其速度；drag 這次移動是不是拖動造成的（拖動的擠壓較大）
       // bd 煞車時的前進方向（1 往右、-1 往左），擠壓時前進方向那端不動
-      this._s = { x: 0, v: 0, tx: 0, p: 0, pv: 0, b: 0, bv: 0, bd: 1, drag: false, down: false, hold: 0 };
+      // sp 左邊圓鈕出現的程度（0–1，彈簧，可過衝）、spv 其速度
+      this._s = { x: 0, v: 0, tx: 0, p: 0, pv: 0, b: 0, bv: 0, bd: 1, sp: 0, spv: 0, drag: false, down: false, hold: 0 };
       this._g = null;      // 手勢
       this._raf = 0;
       this._last = 0;
@@ -181,6 +183,10 @@
       this.side = side || null;
       this.el.classList.toggle("ltb-has-side", on);
       b.tabIndex = on ? 0 : -1;
+      // 出現程度由彈簧驅動（_step），第一次或減少動態時直接到位
+      const s = this._s;
+      if (!this._placed || reduced()) { s.sp = on ? 1 : 0; s.spv = 0; this._sideVis(); }
+      else this._kick();
       if (on) {
         b.removeAttribute("aria-hidden");
         b.dataset.id = side.id == null ? "" : side.id;
@@ -266,7 +272,7 @@
       clearTimeout(this._sideT);
       this._css = {};
       if (this._probe) this._probe.remove();
-      this.el.classList.remove("ltb", "ltb-noind", "ltb-has-side", "ltb-min");
+      this.el.classList.remove("ltb", "ltb-noind", "ltb-has-side", "ltb-min", "ltb-side-vis");
       OWN_PROPS.forEach(p => this.el.style.removeProperty(p));
       this.el.innerHTML = "";
     }
@@ -305,6 +311,7 @@
       if (brake > 0) s.bd = Math.sign(s.v);
       const bt = Math.min(1, brake / P.brakeRef), bs = bt > s.b ? P.brake : P.release;   // 擠進去快、恢復慢
       [s.b, s.bv] = spring(s.b, s.bv, bt, bs.k, bs.zeta, dt);
+      [s.sp, s.spv] = spring(s.sp, s.spv, this.side ? 1 : 0, P.side.k, P.side.zeta, dt);
       const far = Math.abs(s.tx - s.x) > 3 || Math.abs(s.v) > 40;
       const up = s.down || far || now < s.hold;
       const m = up ? P.lift : P.settle;
@@ -314,8 +321,8 @@
       if (this._pend && Math.abs(s.tx - s.x) < this.options.arriveDistance) this._flush();
 
       const rest = !up && Math.abs(s.tx - s.x) < .3 && Math.abs(s.v) < 2 && Math.abs(s.p) < .002 && Math.abs(s.pv) < .02
-        && Math.abs(s.b) < .002 && Math.abs(s.bv) < .02;
-      if (rest) { s.x = s.tx; s.v = s.p = s.pv = s.b = s.bv = 0; s.drag = false; this._render(); this._raf = 0; return; }
+        && Math.abs(s.b) < .002 && Math.abs(s.bv) < .02 && Math.abs(s.sp - (this.side ? 1 : 0)) < .001 && Math.abs(s.spv) < .01;
+      if (rest) { s.x = s.tx; s.v = s.p = s.pv = s.b = s.bv = s.spv = 0; s.sp = this.side ? 1 : 0; s.drag = false; this._render(); this._raf = 0; return; }
       this._raf = requestAnimationFrame(t => this._step(t));
     }
 
@@ -349,6 +356,8 @@
       put("--ltb-cx", s.x.toFixed(2) + "px");
       put("--ltb-m", (1 + (P.mag - 1) * pc).toFixed(4));
       put("scale", `${(1 + P.barX * p).toFixed(4)} ${(1 + P.barY * p).toFixed(4)}`);
+      put("--ltb-sp", s.sp.toFixed(4));
+      this._sideVis();
       put("--ltb-isx", (1 / (1 + P.barX * p)).toFixed(4));            // 圓形按鈕反向縮放，不跟著分頁列放大
       put("--ltb-isy", (1 / (1 + P.barY * p)).toFixed(4));
       if (pc > 0) this._lensShape(pl, w, h, 1 + P.barX * p, 1 + P.barY * p);
@@ -406,6 +415,13 @@
     }
 
     /* ---------- 內部 ---------- */
+
+    // 圓鈕看得到時才 visible（收起的淡出結束後隱藏，不擋點擊、不被讀到）
+    _sideVis() {
+      const v = this._s.sp > .001;
+      if (v !== this._sideShown) { this._sideShown = v; this.el.classList.toggle("ltb-side-vis", v); }
+      if (!this.sw) this.el.style.setProperty("--ltb-sp", this._s.sp.toFixed(4));
+    }
 
     // 左邊圓形按鈕的按壓：按下浮起放大，放開後至少維持 hold 毫秒再縮回（輕按也看得到）
     _sidePress() {
@@ -544,7 +560,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.7.2";
+  LiquidTabbar.version = "2.7.3";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;

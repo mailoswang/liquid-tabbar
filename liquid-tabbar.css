@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.3 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -72,7 +72,11 @@
 
 .ltb {
   position: fixed; left: 50%; translate: -50% 0; bottom: var(--ltb-bottom); z-index: var(--ltb-z);
-  width: var(--ltb-gw, var(--ltb-width)); height: var(--ltb-height); padding: var(--ltb-pad-y) var(--ltb-pad-x);
+  /* 有左邊圓鈕時分頁列讓出「圓鈕直徑 + 間距」：--ltb-sp（0–1，圓鈕出現的程度）由 JS 每幀寫入，
+     寬度與 margin 都從它算，兩者一定同步、右緣不動（不靠 CSS 過渡：部分 iOS Safari 兩者不同步，整組會偏一邊） */
+  --ltb-sx: calc((var(--ltb-height) + var(--ltb-side-gap)) * var(--ltb-sp, 0));
+  width: calc(var(--ltb-gw, var(--ltb-width)) - var(--ltb-sx)); height: var(--ltb-height); padding: var(--ltb-pad-y) var(--ltb-pad-x);
+  margin-left: calc(var(--ltb-sx) / 2);
   display: grid; grid-template-columns: repeat(var(--ltb-n, 4), 1fr); isolation: isolate;
   border: 0; border-radius: 999px;
   box-shadow: var(--ltb-shadow);
@@ -83,16 +87,8 @@
    改用平移補回：縮放後往下移 (1 - s) × 高度 / 2；有左邊圓鈕時再往左補，讓整組（含圓鈕）的中央不動 */
 .ltb.ltb-min {
   --ltb-ms: var(--ltb-min-scale);
-  --ltb-mo: 0px;
+  --ltb-mo: calc(var(--ltb-sx) / 2);
   transform: translate(calc(-1 * var(--ltb-mo) * (1 - var(--ltb-ms))), calc(var(--ltb-height) * (1 - var(--ltb-ms)) / 2)) scale(var(--ltb-ms));
-}
-.ltb.ltb-min.ltb-has-side { --ltb-mo: calc((var(--ltb-height) + var(--ltb-side-gap)) / 2) }
-/* 有左邊圓形按鈕時：整組總寬度不變，分頁列往右讓出「圓鈕直徑 + 間距」。
-   寬度用 JS 換算好的像素值 --ltb-gw（含 min() 的 --ltb-width 在部分 iOS Safari 不會做過渡動畫，
-   寬度會直接跳到終點、只剩 margin 在動，整組就先偏一邊再滑回中間）；JS 算好之前退回 --ltb-width */
-.ltb.ltb-has-side {
-  width: calc(var(--ltb-gw, var(--ltb-width)) - var(--ltb-height) - var(--ltb-side-gap));
-  margin-left: calc((var(--ltb-height) + var(--ltb-side-gap)) / 2);
 }
 
 /* 底板的玻璃（底色、模糊、亮邊）放在獨立一層：浮起時在膠囊的位置挖空（程度跟著 --ltb-g），
@@ -233,13 +229,16 @@
   scale: var(--ltb-isx, 1) var(--ltb-isy, 1);
   visibility: hidden; pointer-events: none;
 }
-.ltb-has-side .ltb-side { visibility: visible; pointer-events: auto }
+.ltb-side-vis .ltb-side { visibility: visible }
+.ltb-has-side .ltb-side { pointer-events: auto }
 .ltb-side-in {
   position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%;
   background: var(--ltb-bg);
   -webkit-backdrop-filter: var(--ltb-blur); backdrop-filter: var(--ltb-blur);
   box-shadow: var(--ltb-rim), var(--ltb-shadow);
-  opacity: 0; scale: .6;
+  /* 彈出／淡出跟著 --ltb-sp（JS 的彈簧，會略過衝 → 小小的彈跳）；按壓的放大另外用 scale */
+  opacity: clamp(0, var(--ltb-sp, 0), 1);
+  transform: scale(calc(.6 + .4 * var(--ltb-sp, 0)));
 }
 .ltb-side-in::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -247,20 +246,15 @@
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
 }
-.ltb-has-side .ltb-side-in { opacity: 1; scale: 1 }
 /* 按下（輕按或長按）：和膠囊一樣浮起放大，加上浮起時的外框與陰影；放開後帶一點回彈縮回 */
 .ltb-has-side .ltb-side.ltb-side-down .ltb-side-in {
   scale: 1.22;
   box-shadow: var(--ltb-rim), 0 0 0 .5px var(--ltb-lift-edge), 0 8px 22px var(--ltb-lift-shadow), 0 2px 6px rgba(0, 0, 0, .18);
 }
-/* 動態效果只在使用者沒有要求減少動態時才加上（分頁列寬度、圓鈕彈出／收起） */
-/* 圓鈕出現／收起：圓鈕原地彈出／淡出，分頁列同時從左邊縮短或長回（右緣不動），整組的左右邊界始終不動 */
+/* 動態效果只在使用者沒有要求減少動態時才加上（捲動縮小、圓鈕按壓；圓鈕出現／收起由 JS 的彈簧驅動） */
 @media (prefers-reduced-motion: no-preference) {
-  .ltb { transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1), transform .42s cubic-bezier(.3, 1.25, .5, 1) }
-  .ltb-side { transition: visibility 0s .25s }
-  .ltb-has-side .ltb-side { transition: none }
-  .ltb-side-in { transition: opacity .2s ease, scale .25s ease-in, box-shadow .3s ease }
-  .ltb-has-side .ltb-side-in { transition: opacity .2s ease, scale .42s cubic-bezier(.3, 1.5, .5, 1), box-shadow .3s ease }
+  .ltb { transition: transform .42s cubic-bezier(.3, 1.25, .5, 1) }
+  .ltb-side-in { transition: scale .42s cubic-bezier(.3, 1.5, .5, 1), box-shadow .3s ease }
   .ltb-has-side .ltb-side.ltb-side-down .ltb-side-in { transition: scale .16s cubic-bezier(.2, .9, .3, 1.1), box-shadow .16s ease }
 }
 .ltb-side:focus-visible { outline: 0 }
