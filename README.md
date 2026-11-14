@@ -23,11 +23,11 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins an exact version (`@v2.6.0`), so later releases never change your project unexpectedly. Other choices:
+The URL pins an exact version (`@v2.6.1`), so later releases never change your project unexpectedly. Other choices:
 
 - `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
 - Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -159,7 +159,7 @@ When the button appears or goes away, the bar's width animates and the button po
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -281,7 +281,7 @@ Springs take a stiffness `k` and a damping ratio `zeta` (1 = no overshoot, lower
 | `move` | `{ k: 420, zeta: .82 }` | Spring that moves the pill (slight overshoot) |
 | `lift` | `{ k: 900, zeta: .90 }` | Lifting into glass on press: fast, almost no overshoot |
 | `settle` | `{ k: 260, zeta: .46 }` | Shrinking back after arrival: slower, one visible bounce |
-| `brake` | `{ k: 520, zeta: .5 }` | Spring for the brake squash: squashes, bounces once, recovers |
+| `brake` / `release` | `{ k: 520, zeta: .6 }` / `{ k: 60, zeta: .85 }` | Brake squash springs: squeezing in (fast) / recovering (slow and soft, barely bounces) |
 | `growW` / `growH` | `1.3` / `1.33` | How much wider / taller the glass gets while pressed |
 | `mag` | `1` | Scale of the icons under the glass (1 = grow with the bar, >1 magnify, <1 shrink) |
 | `stretch` / `stretchMax` | `.065` / `1.4` | Extra width per 1 px/s of speed / maximum stretch (in tab widths) |
@@ -291,7 +291,7 @@ Springs take a stiffness `k` and a damping ratio `zeta` (1 = no overshoot, lower
 | `overdrag` | `.12` | How far (in tab widths) the pill can be dragged past the first and last tabs |
 | `edge` | `9` | How far (px) the lifted glass may extend past the left and right ends of the bar. At rest the pill never leaves the bar; at the first and last tabs it grows inward |
 | `brakeRef` | `8000` | Deceleration (px/s²) that counts as a full brake; stronger braking is capped |
-| `brakeW` / `brakeH` | `.14` / `.12` | Brake squash while dragging: how much the glass gets shorter / taller |
+| `brakeW` / `brakeH` | `.25` / `.15` | Brake squash while dragging: how much the glass gets shorter / taller. The leading end stays put; the trailing end is pushed in |
 | `brakeTapW` / `brakeTapH` | `.07` / `.015` | Brake squash when the pill slides by itself after a tap: mostly just squeezes inward |
 
 `LiquidTabbar.physics` holds the defaults.
@@ -325,6 +325,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.6.1**: Stronger brake squash while dragging (`brakeW` .25, `brakeH` .15). The leading end of the glass stays put and only the trailing end is pushed in. It recovers more slowly and softly with its own spring (`release`).
 - **v2.6.0**: Brake squash: as the glass slows down it squashes (shorter, taller), bounces once and recovers. Strong while dragging, mostly a slight inward squeeze when the pill slides by itself after a tap. New physics `brake`, `brakeRef`, `brakeW` / `brakeH`, `brakeTapW` / `brakeTapH`.
 - **v2.5.1**: The keyboard focus ring on a tab is visible again (the tab's mask also hid its own outline). The bar's width and side-button transitions are only added when the user hasn't asked for reduced motion.
 - **v2.5.0**: New side button: a separate round glass button to the left of the bar (`side`, `onSide`, `setSide`, `ltb:side`, `--ltb-side-gap`). The group keeps its total width; the bar's width animates when the button comes and goes.

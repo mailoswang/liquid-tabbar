@@ -23,11 +23,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.6.0`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.6.1`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -159,7 +159,7 @@ const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.b
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -281,7 +281,7 @@ new LiquidTabbar("#tabs", {
 | `move` | `{ k: 420, zeta: .82 }` | 膠囊移動的彈簧（些微過衝） |
 | `lift` | `{ k: 900, zeta: .90 }` | 按下時浮起成玻璃：快速、幾乎不過衝 |
 | `settle` | `{ k: 260, zeta: .46 }` | 到位後縮回：較慢、明顯回彈一次 |
-| `brake` | `{ k: 520, zeta: .5 }` | 煞車擠壓的彈簧：擠壓後彈一下再恢復 |
+| `brake` / `release` | `{ k: 520, zeta: .6 }` / `{ k: 60, zeta: .85 }` | 煞車擠壓的彈簧：擠進去（快）／恢復（慢、柔和、幾乎不彈） |
 | `growW` / `growH` | `1.3` / `1.33` | 按住時玻璃變寬 / 變高的倍率 |
 | `mag` | `1` | 玻璃下圖示的縮放倍率（1：跟著底板一起放大；>1 再放大、<1 縮小） |
 | `stretch` / `stretchMax` | `.065` / `1.4` | 每 1 px/s 速度多拉長幾 px / 拉長上限（以一格寬為單位） |
@@ -291,7 +291,7 @@ new LiquidTabbar("#tabs", {
 | `overdrag` | `.12` | 拖動時可以拉出最左／最右格多少（以一格寬為單位） |
 | `edge` | `9` | 浮起時玻璃最多可以超出分頁列左右兩端幾 px。平常膠囊不會超出；在最左／最右格放大時往內側長 |
 | `brakeRef` | `8000` | 減速度多大（px/s²）算完整煞車；更急的煞車會封頂 |
-| `brakeW` / `brakeH` | `.14` / `.12` | 拖動時的煞車擠壓：玻璃縮短 / 撐高多少 |
+| `brakeW` / `brakeH` | `.25` / `.15` | 拖動時的煞車擠壓：玻璃縮短 / 撐高多少。前進方向那端不動，後端擠過去 |
 | `brakeTapW` / `brakeTapH` | `.07` / `.015` | 點擊後膠囊自己滑過去時的煞車擠壓：主要只往內擠 |
 
 預設值在 `LiquidTabbar.physics`。
@@ -325,6 +325,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.6.1**：拖動時的煞車擠壓加大（`brakeW` .25、`brakeH` .15），前進方向那端不動、只有後端被擠過去；恢復改用自己的彈簧（`release`），更慢、更柔和。
 - **v2.6.0**：煞車擠壓：玻璃減速時被擠壓（左右變短、上下撐大），彈一下再恢復。拖動時明顯，點擊後膠囊自己滑過去時主要只是微微往內擠。新增動畫參數 `brake`、`brakeRef`、`brakeW` / `brakeH`、`brakeTapW` / `brakeTapH`。
 - **v2.5.1**：分頁的鍵盤焦點外框恢復可見（分頁的遮罩也把它自己的外框遮掉了）。分頁列寬度與圓形按鈕的過渡動畫，只在使用者沒有要求減少動態時才加上。
 - **v2.5.0**：新增左邊的圓形按鈕：分頁列左邊單獨一顆玻璃圓鈕（`side`、`onSide`、`setSide`、`ltb:side`、`--ltb-side-gap`）。整組總寬度不變，圓鈕出現或收起時分頁列寬度有過渡動畫。

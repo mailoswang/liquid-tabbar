@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.6.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.6.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -7,7 +7,7 @@
  *      靠近玻璃兩端以 S 形接回外面放大後的底板，在底板盡頭（最左／最右格）則是原本大小的圓弧；
  *      玻璃下的變色圖示與文字不縮小，跟著整條底板一起放大
  *   ④ 落定：到位後縮回深色膠囊，尺寸略過衝再回彈
- *   煞車：玻璃減速時被擠壓（左右變短、上下撐大），彈一下再恢復；拖動時明顯，點擊時主要只往內擠
+ *   煞車：玻璃減速時被擠壓（前進方向那端不動、後端擠過去，上下撐大），再慢慢恢復；拖動時明顯，點擊時主要只往內擠
  *   左右兩端：膠囊不超出底板（浮起時最多外擴 edge px），在最左／最右格放大時往內側長
  *   ⑤ 換頁：放開瞬間就通知，不等動畫（頁面渲染很重時可開 waitForPill，等膠囊到位再通知）
  */
@@ -24,7 +24,8 @@
     move:   { k: 420, zeta: .82 },  // 位置彈簧：剛度 / 阻尼比（<1 會些微過衝）
     lift:   { k: 900, zeta: .90 },  // 浮起：快速、幾乎不過衝（錄影 0–50 ms）
     settle: { k: 260, zeta: .46 },  // 落定：較慢、明顯回彈一次（錄影 250–500 ms）
-    brake:  { k: 520, zeta: .5 },   // 煞車擠壓的彈簧：擠壓後彈一下再恢復
+    brake:  { k: 520, zeta: .6 },   // 煞車擠壓：擠進去的彈簧（快）
+    release: { k: 60, zeta: .85 },  // 煞車擠壓：恢復的彈簧（慢、柔和、幾乎不彈）
     growW: 1.3,      // 浮起時膠囊變寬倍率
     growH: 1.33,     // 浮起時膠囊變高倍率（超出底板上下緣）
     mag: 1,          // 玻璃下圖示縮放倍率（1：跟著底板一起放大；>1 再放大、<1 縮小）
@@ -38,8 +39,8 @@
     overdrag: .12,   // 拖動時可以拉出最左／最右格多少（以一格寬為單位）
     edge: 9,         // 浮起時膠囊最多可以超出底板左右兩端幾 px（平常不超出）
     brakeRef: 8000,  // 減速度多大（px/s²）算「煞車量 1」（超過就封頂）
-    brakeW: .14,     // 拖動時煞車：膠囊寬度最多縮短多少（比例）
-    brakeH: .12,     // 拖動時煞車：膠囊高度最多撐高多少（比例）
+    brakeW: .25,     // 拖動時煞車：膠囊寬度最多縮短多少（比例；前進方向那端不動，後端擠過去）
+    brakeH: .15,     // 拖動時煞車：膠囊高度最多撐高多少（比例）
     brakeTapW: .07,  // 點擊後膠囊自己滑過去時的煞車：寬度縮短（較小）
     brakeTapH: .015  // 點擊時的煞車：高度幾乎不變，主要只看得出往內擠
   };
@@ -88,7 +89,7 @@
       const o = Object.assign({}, DEFAULTS, options);
       o.physics = Object.assign({}, PHYSICS, options.physics);
       const ph = options.physics || {};
-      for (const k of ["move", "lift", "settle", "brake"]) o.physics[k] = Object.assign({}, PHYSICS[k], ph[k]);
+      for (const k of ["move", "lift", "settle", "brake", "release"]) o.physics[k] = Object.assign({}, PHYSICS[k], ph[k]);
       this.el = el;
       this.options = o;
       this.items = [];
@@ -96,7 +97,8 @@
       this.sw = 0;
       // 動畫狀態：x 膠囊中心、v 速度、tx 目標；p 浮起程度（可過衝）、pv 其速度
       // b 煞車擠壓量（彈簧，可過衝）、bv 其速度；drag 這次移動是不是拖動造成的（拖動的擠壓較大）
-      this._s = { x: 0, v: 0, tx: 0, p: 0, pv: 0, b: 0, bv: 0, drag: false, down: false, hold: 0 };
+      // bd 煞車時的前進方向（1 往右、-1 往左），擠壓時前進方向那端不動
+      this._s = { x: 0, v: 0, tx: 0, p: 0, pv: 0, b: 0, bv: 0, bd: 1, drag: false, down: false, hold: 0 };
       this._g = null;      // 手勢
       this._raf = 0;
       this._last = 0;
@@ -249,7 +251,9 @@
       [s.x, s.v] = spring(s.x, s.v, s.tx, P.move.k, P.move.zeta, dt);
       // 煞車擠壓：只算「正在變慢」的減速度，換算成 0–1 的煞車量，再用彈簧追（擠壓後彈一下）
       const brake = Math.abs(s.v) > 20 ? Math.max(0, -(s.v - v0) / dt * Math.sign(s.v)) : 0;
-      [s.b, s.bv] = spring(s.b, s.bv, Math.min(1, brake / P.brakeRef), P.brake.k, P.brake.zeta, dt);
+      if (brake > 0) s.bd = Math.sign(s.v);
+      const bt = Math.min(1, brake / P.brakeRef), bs = bt > s.b ? P.brake : P.release;   // 擠進去快、恢復慢
+      [s.b, s.bv] = spring(s.b, s.bv, bt, bs.k, bs.zeta, dt);
       const far = Math.abs(s.tx - s.x) > 3 || Math.abs(s.v) > 40;
       const up = s.down || far || now < s.hold;
       const m = up ? P.lift : P.settle;
@@ -273,15 +277,17 @@
       const baseW = this.sw + this.pillPad, baseH = this.H - 2 * this.padY;
       // 煞車擠壓：減速時左右變短、上下撐大（拖動時明顯，點擊時主要只有往內擠）；只在浮起時才有
       const bk = s.b * pc, bW = s.drag ? P.brakeW : P.brakeTapW, bH = s.drag ? P.brakeH : P.brakeTapH;
-      let w = (baseW * (1 + (P.growW - 1) * pc) * (1 + over * .5)
-        + Math.min(speed * P.stretch, this.sw * P.stretchMax)) * (1 - bW * bk);
+      const w0 = baseW * (1 + (P.growW - 1) * pc) * (1 + over * .5)
+        + Math.min(speed * P.stretch, this.sw * P.stretchMax);
+      let w = w0 * (1 - bW * bk);
+      const cx = s.x + s.bd * (w0 - w) / 2;   // 前進方向那端不動，後端往前擠
       const h = baseH * (1 + (P.growH - 1) * pc) * (1 + over * .3)
         / (1 + Math.min(speed / P.squash, P.squashMax)) * (1 + bH * bk);
       // 左右夾在底板內：最左可到「最左格平常膠囊的左緣」，浮起時再往外 edge px；
       // 太寬就收窄、靠邊時整顆往內推，所以兩端的格子放大或拉長時是往內側長
       const lo = this.padX - this.pillPad / 2 - P.edge * pc, hi = this.W - lo;
       w = Math.min(w, hi - lo);
-      const pl = clamp(s.x - w / 2, lo, hi - w), pt = (this.H - h) / 2;
+      const pl = clamp(cx - w / 2, lo, hi - w), pt = (this.H - h) / 2;
       // 只寫有變的值：每次寫入都會讓瀏覽器重算整條分頁列的樣式，手機上很明顯
       const c = this._css, put = (k, v) => { if (c[k] !== v) { c[k] = v; st.setProperty(k, v); } };
       put("--ltb-pl", pl.toFixed(2) + "px");
@@ -467,7 +473,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.6.0";
+  LiquidTabbar.version = "2.6.1";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;
