@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.6.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.6.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -235,14 +235,18 @@
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
 }
 .ltb-has-side .ltb-side-in { opacity: 1; scale: 1 }
-.ltb-has-side .ltb-side:active .ltb-side-in { scale: .9 }
+/* 按下（輕按或長按）：和膠囊一樣浮起放大，加上浮起時的外框與陰影；放開後帶一點回彈縮回 */
+.ltb-has-side .ltb-side.ltb-side-down .ltb-side-in {
+  scale: 1.22;
+  box-shadow: var(--ltb-rim), 0 0 0 .5px var(--ltb-lift-edge), 0 8px 22px var(--ltb-lift-shadow), 0 2px 6px rgba(0, 0, 0, .18);
+}
 /* 動態效果只在使用者沒有要求減少動態時才加上（分頁列寬度、圓鈕彈出／收起） */
 @media (prefers-reduced-motion: no-preference) {
   .ltb { transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1) }
   .ltb-side { transition: visibility 0s .3s }
   .ltb-has-side .ltb-side { transition: none }
-  .ltb-side-in { transition: opacity .25s ease, scale .38s cubic-bezier(.3, 1.4, .5, 1) }
-  .ltb-has-side .ltb-side:active .ltb-side-in { transition-duration: .12s }
+  .ltb-side-in { transition: opacity .25s ease, scale .42s cubic-bezier(.3, 1.5, .5, 1), box-shadow .3s ease }
+  .ltb-has-side .ltb-side.ltb-side-down .ltb-side-in { transition: scale .16s cubic-bezier(.2, .9, .3, 1.1), box-shadow .16s ease }
 }
 .ltb-side:focus-visible { outline: 0 }
 .ltb-side:focus-visible .ltb-side-in { outline: 2px solid var(--ltb-focus); outline-offset: 4px }

@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.6.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.6.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -214,6 +214,7 @@
       cancelAnimationFrame(this._raf);
       if (this._pend) clearTimeout(this._pend.timer);
       this._off.forEach(f => f());
+      clearTimeout(this._sideT);
       this._css = {};
       this.el.classList.remove("ltb", "ltb-noind", "ltb-has-side");
       OWN_PROPS.forEach(p => this.el.style.removeProperty(p));
@@ -356,6 +357,19 @@
 
     /* ---------- 內部 ---------- */
 
+    // 左邊圓形按鈕的按壓：按下浮起放大，放開後至少維持 hold 毫秒再縮回（輕按也看得到）
+    _sidePress() {
+      clearTimeout(this._sideT);
+      this._sideAt = performance.now();
+      this._side.classList.add("ltb-side-down");
+    }
+    _sideRelease() {
+      if (!this._side.classList.contains("ltb-side-down")) return;
+      const wait = Math.max(0, this.options.physics.hold - (performance.now() - (this._sideAt || 0)));
+      clearTimeout(this._sideT);
+      this._sideT = setTimeout(() => this._side.classList.remove("ltb-side-down"), wait);
+    }
+
     _buttons() { return [...this.el.querySelectorAll(":scope > .ltb-item")]; }
 
     _indexOf(key) {
@@ -415,7 +429,8 @@
 
       this._off = [
         on(el, "pointerdown", e => {
-          if (this._g || !this.items.length || e.target.closest(".ltb-side")) return;
+          if (e.target.closest(".ltb-side")) { this._sidePress(); return; }
+          if (this._g || !this.items.length) return;
           const x = localX(e);
           this._g = { id: e.pointerId, x0: x, moved: false, k: slotAt(x) };
           try { el.setPointerCapture(e.pointerId); } catch (_) {}
@@ -452,6 +467,7 @@
         on(el, "click", e => {
           if (e.target.closest(".ltb-side")) {
             if (!this.side) return;
+            if (e.detail === 0) { this._sidePress(); this._sideRelease(); }   // 鍵盤操作也播一次浮起
             if (o.onSide) o.onSide(this.side);
             el.dispatchEvent(new CustomEvent("ltb:side", { detail: { side: this.side } }));
             return;
@@ -459,6 +475,9 @@
           const b = e.target.closest(".ltb-item");
           if (b) this._choose(this._buttons().indexOf(b), "click");
         }),
+        on(this._side, "pointerup", () => this._sideRelease()),
+        on(this._side, "pointercancel", () => this._sideRelease()),
+        on(this._side, "pointerleave", () => this._sideRelease()),
         on(window, "resize", () => { this.layout(); if (this.index >= 0) this._go(this._center(this.index), true); })
       ];
       if (typeof ResizeObserver === "function") {
@@ -473,7 +492,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.6.1";
+  LiquidTabbar.version = "2.6.2";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;

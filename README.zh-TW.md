@@ -23,11 +23,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.6.1`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.6.2`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -159,7 +159,7 @@ const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.b
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.1/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.6.2/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -325,6 +325,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.6.2**：左邊的圓形按鈕按下時（輕按或長按）和膠囊一樣浮起：放大到約 1.22 倍、加上浮起玻璃的外框與陰影，至少維持 `hold` 毫秒，放開後帶回彈縮回；鍵盤操作也會播一次。不再是按下縮小。
 - **v2.6.1**：拖動時的煞車擠壓加大（`brakeW` .25、`brakeH` .15），前進方向那端不動、只有後端被擠過去；恢復改用自己的彈簧（`release`），更慢、更柔和。
 - **v2.6.0**：煞車擠壓：玻璃減速時被擠壓（左右變短、上下撐大），彈一下再恢復。拖動時明顯，點擊後膠囊自己滑過去時主要只是微微往內擠。新增動畫參數 `brake`、`brakeRef`、`brakeW` / `brakeH`、`brakeTapW` / `brakeTapH`。
 - **v2.5.1**：分頁的鍵盤焦點外框恢復可見（分頁的遮罩也把它自己的外框遮掉了）。分頁列寬度與圓形按鈕的過渡動畫，只在使用者沒有要求減少動態時才加上。
