@@ -23,11 +23,11 @@ The motion is tuned from frame-by-frame (60fps) analysis of screen recordings of
 ## Install
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.js"></script>
 ```
 
-The URL pins an exact version (`@v2.7.0`), so later releases never change your project unexpectedly. Other choices:
+The URL pins an exact version (`@v2.7.1`), so later releases never change your project unexpectedly. Other choices:
 
 - `@2` follows the latest 2.x release, so you get fixes automatically. The CDN may take a while to pick up a new release.
 - Copy `liquid-tabbar.css` and `liquid-tabbar.js` into your project.
@@ -44,8 +44,8 @@ Save this as an `.html` file and open it:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* leave room for the tab bar */
@@ -159,7 +159,7 @@ When the button appears or goes away, the bar's width animates and the button po
 You can load it with `import`. It then registers `window.LiquidTabbar`:
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -333,6 +333,7 @@ The browser's long-press menu (copy, image preview) is disabled only on the bar 
 
 ## Changelog
 
+- **v2.7.1**: When the side button appears or goes away, the group no longer drifts to one side and snaps back: the button pops in or fades out in its final place while the bar shrinks or grows from its left edge, so the group's edges stay put.
 - **v2.7.0**: Shrink on scroll: with `minimizeOnScroll`, the whole bar (side button included) shrinks to `--ltb-min-scale` as the page scrolls down, keeping its bottom and center in place, and comes back on scrolling up, at the top, or as soon as the bar (or the side button) is tapped. New `scrollTarget`, `minimizeDistance`, `setMinimized()`, `setMinimizeOnScroll()`, `minimized`, event `ltb:minimize`, class `.ltb-min`.
 - **v2.6.2**: The side button lifts like the pill when pressed (tap or long press): it grows to about 1.22× with the lifted glass's outline and shadow, stays up at least `hold` ms, and springs back on release. Keyboard activation plays it too. It no longer shrinks on press.
 - **v2.6.1**: Stronger brake squash while dragging (`brakeW` .25, `brakeH` .15). The leading end of the glass stays put and only the trailing end is pushed in. It recovers more slowly and softly with its own spring (`release`).

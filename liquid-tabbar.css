@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -220,12 +220,14 @@
    左邊的圓形按鈕（side）：和底板同一組玻璃。按住分頁列時整條會放大，
    圓鈕用 --ltb-isx / --ltb-isy 以分頁列中心反向縮放，維持原本的大小與位置
    ========================================================================== */
+/* 圓鈕以分頁列的右緣定位（--ltb-gw：整組寬度，JS 依 --ltb-width 換算）：
+   分頁列寬度動畫時右緣不動，圓鈕也就一直待在最終位置，不會跟著分頁列左緣跑 */
 .ltb-side {
-  position: absolute; top: 0; left: calc(-1 * (var(--ltb-height) + var(--ltb-side-gap)));
+  position: absolute; top: 0; left: calc(100% - var(--ltb-gw, calc(100% + var(--ltb-height) + var(--ltb-side-gap))));
   width: var(--ltb-height); height: var(--ltb-height);
   border: 0; padding: 0; margin: 0; background: none; font: inherit; color: var(--ltb-ink); cursor: pointer;
   -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-  transform-origin: calc(var(--ltb-height) + var(--ltb-side-gap) + var(--ltb-dw, 0px) / 2) 50%;
+  transform-origin: calc(var(--ltb-gw, calc(var(--ltb-dw, 0px) + var(--ltb-height) + var(--ltb-side-gap))) - var(--ltb-dw, 0px) / 2) 50%;
   scale: var(--ltb-isx, 1) var(--ltb-isy, 1);
   visibility: hidden; pointer-events: none;
 }
@@ -250,11 +252,13 @@
   box-shadow: var(--ltb-rim), 0 0 0 .5px var(--ltb-lift-edge), 0 8px 22px var(--ltb-lift-shadow), 0 2px 6px rgba(0, 0, 0, .18);
 }
 /* 動態效果只在使用者沒有要求減少動態時才加上（分頁列寬度、圓鈕彈出／收起） */
+/* 圓鈕出現／收起：圓鈕原地彈出／淡出，分頁列同時從左邊縮短或長回（右緣不動），整組的左右邊界始終不動 */
 @media (prefers-reduced-motion: no-preference) {
   .ltb { transition: width .38s cubic-bezier(.2, .8, .2, 1), margin-left .38s cubic-bezier(.2, .8, .2, 1), transform .42s cubic-bezier(.3, 1.25, .5, 1) }
-  .ltb-side { transition: visibility 0s .3s }
+  .ltb-side { transition: visibility 0s .25s }
   .ltb-has-side .ltb-side { transition: none }
-  .ltb-side-in { transition: opacity .25s ease, scale .42s cubic-bezier(.3, 1.5, .5, 1), box-shadow .3s ease }
+  .ltb-side-in { transition: opacity .2s ease, scale .25s ease-in, box-shadow .3s ease }
+  .ltb-has-side .ltb-side-in { transition: opacity .2s ease, scale .42s cubic-bezier(.3, 1.5, .5, 1), box-shadow .3s ease }
   .ltb-has-side .ltb-side.ltb-side-down .ltb-side-in { transition: scale .16s cubic-bezier(.2, .9, .3, 1.1), box-shadow .16s ease }
 }
 .ltb-side:focus-visible { outline: 0 }

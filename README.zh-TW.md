@@ -23,11 +23,11 @@
 ## 安裝
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.js"></script>
 ```
 
-網址裡固定完整版本號（`@v2.7.0`），之後函式庫更新也不會突然改變你的專案。其他選擇：
+網址裡固定完整版本號（`@v2.7.1`），之後函式庫更新也不會突然改變你的專案。其他選擇：
 
 - `@2`：自動跟到 2.x 的最新版，修正會自動套用；新版發布後 CDN 可能要一段時間才會更新。
 - 直接把 `liquid-tabbar.css`、`liquid-tabbar.js` 複製進專案。
@@ -44,8 +44,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.css">
-  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.js"></script>
   <style>
     body { margin: 0; background: #111; color: #fff; font-family: system-ui, sans-serif }
     main { padding: 24px 16px calc(110px + env(safe-area-inset-bottom)) }  /* 底部留空間給分頁列 */
@@ -159,7 +159,7 @@ const tabs = new LiquidTabbar("#tabs", { items: ITEMS, onSide: side => history.b
 用 `import` 載入也可以，載入後從 `window.LiquidTabbar` 取用：
 
 ```js
-import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.0/liquid-tabbar.min.js";
+import "https://cdn.jsdelivr.net/gh/mailoswang/liquid-tabbar@v2.7.1/liquid-tabbar.min.js";
 const tabs = new window.LiquidTabbar("#tabs", { /* … */ });
 ```
 
@@ -333,6 +333,7 @@ liquid-tabbar 模仿 iOS 的液態玻璃分頁列，但以下效果受限於目�
 
 ## 版本紀錄
 
+- **v2.7.1**：圓形按鈕出現或收起時，整組不再先偏到一邊再跳回中間：圓鈕在最終位置原地彈出／淡出，分頁列同時從左邊縮短或長回，整組的左右邊界不動。
 - **v2.7.0**：捲動縮小：開啟 `minimizeOnScroll` 後，頁面往下捲動時整組（含左邊圓鈕）縮小到 `--ltb-min-scale`，底部與中央不動；往上捲、回到頂端，或一點到分頁列（含圓鈕）就恢復。新增 `scrollTarget`、`minimizeDistance`、`setMinimized()`、`setMinimizeOnScroll()`、`minimized`、事件 `ltb:minimize`、class `.ltb-min`。
 - **v2.6.2**：左邊的圓形按鈕按下時（輕按或長按）和膠囊一樣浮起：放大到約 1.22 倍、加上浮起玻璃的外框與陰影，至少維持 `hold` 毫秒，放開後帶回彈縮回；鍵盤操作也會播一次。不再是按下縮小。
 - **v2.6.1**：拖動時的煞車擠壓加大（`brakeW` .25、`brakeH` .15），前進方向那端不動、只有後端被擠過去；恢復改用自己的彈簧（`release`），更慢、更柔和。

@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.0 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* 動畫依 iOS 原生分頁列的螢幕錄影（60fps 逐格）分析：
  *   ① 按下：深色膠囊淡出、浮起成玻璃，放大約 1.3 倍、上下超出底板；整條底板放大約 3–5%
@@ -64,7 +64,7 @@
   };
 
   // 函式庫寫在分頁列元素上的樣式（destroy 時只清這些，不動使用者自己設的）
-  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-xl", "--ltb-xr", "--ltb-isx", "--ltb-isy", "scale"];
+  const OWN_PROPS = ["--ltb-n", "--ltb-sw", "--ltb-dw", "--ltb-pl", "--ltb-pt", "--ltb-pw", "--ltb-ph", "--ltb-g", "--ltb-cx", "--ltb-m", "--ltb-xl", "--ltb-xr", "--ltb-isx", "--ltb-isy", "--ltb-gw", "scale"];
   let uid = 0;   // SVG 漸層 id 用，同頁多個分頁列不衝突
 
   const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -243,6 +243,17 @@
       this.sw = (this.W - 2 * this.padX) / (this.items.length || 1);
       el.style.setProperty("--ltb-sw", this.sw + "px");
       el.style.setProperty("--ltb-dw", this.W + "px");
+      // 整組寬度（--ltb-width 依視窗換算）：圓鈕用它以分頁列右緣定位。--ltb-width 裡的 % 是相對視窗，
+      // 不能直接在圓鈕的 left 裡用（那裡的 % 是分頁列寬），所以用一個隱形的 fixed 元素量出來
+      if (!this._probe) {
+        this._probe = document.createElement("div");
+        this._probe.setAttribute("aria-hidden", "true");
+        this._probe.style.cssText = "position:fixed;left:0;top:0;height:0;visibility:hidden;pointer-events:none";
+        document.body.appendChild(this._probe);
+      }
+      this._probe.style.width = cs.getPropertyValue("--ltb-width").trim() || "0px";
+      const gw = this._probe.offsetWidth;
+      if (gw) el.style.setProperty("--ltb-gw", gw + "px");
       this._render();
       return this;
     }
@@ -254,6 +265,7 @@
       if (this._scrollOff) this._scrollOff();
       clearTimeout(this._sideT);
       this._css = {};
+      if (this._probe) this._probe.remove();
       this.el.classList.remove("ltb", "ltb-noind", "ltb-has-side", "ltb-min");
       OWN_PROPS.forEach(p => this.el.style.removeProperty(p));
       this.el.innerHTML = "";
@@ -532,7 +544,7 @@
     }
   }
 
-  LiquidTabbar.version = "2.7.0";
+  LiquidTabbar.version = "2.7.1";
   LiquidTabbar.physics = PHYSICS;
   LiquidTabbar.defaults = DEFAULTS;
   return LiquidTabbar;
