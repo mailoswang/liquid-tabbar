@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.1 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.2 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -72,7 +72,7 @@
 
 .ltb {
   position: fixed; left: 50%; translate: -50% 0; bottom: var(--ltb-bottom); z-index: var(--ltb-z);
-  width: var(--ltb-width); height: var(--ltb-height); padding: var(--ltb-pad-y) var(--ltb-pad-x);
+  width: var(--ltb-gw, var(--ltb-width)); height: var(--ltb-height); padding: var(--ltb-pad-y) var(--ltb-pad-x);
   display: grid; grid-template-columns: repeat(var(--ltb-n, 4), 1fr); isolation: isolate;
   border: 0; border-radius: 999px;
   box-shadow: var(--ltb-shadow);
@@ -87,9 +87,11 @@
   transform: translate(calc(-1 * var(--ltb-mo) * (1 - var(--ltb-ms))), calc(var(--ltb-height) * (1 - var(--ltb-ms)) / 2)) scale(var(--ltb-ms));
 }
 .ltb.ltb-min.ltb-has-side { --ltb-mo: calc((var(--ltb-height) + var(--ltb-side-gap)) / 2) }
-/* 有左邊圓形按鈕時：整組總寬度不變，分頁列往右讓出「圓鈕直徑 + 間距」 */
+/* 有左邊圓形按鈕時：整組總寬度不變，分頁列往右讓出「圓鈕直徑 + 間距」。
+   寬度用 JS 換算好的像素值 --ltb-gw（含 min() 的 --ltb-width 在部分 iOS Safari 不會做過渡動畫，
+   寬度會直接跳到終點、只剩 margin 在動，整組就先偏一邊再滑回中間）；JS 算好之前退回 --ltb-width */
 .ltb.ltb-has-side {
-  width: calc(var(--ltb-width) - var(--ltb-height) - var(--ltb-side-gap));
+  width: calc(var(--ltb-gw, var(--ltb-width)) - var(--ltb-height) - var(--ltb-side-gap));
   margin-left: calc((var(--ltb-height) + var(--ltb-side-gap)) / 2);
 }
 
