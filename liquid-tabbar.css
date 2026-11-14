@@ -1,4 +1,4 @@
-/*! liquid-tabbar v2.7.4 | MIT | https://github.com/mailoswang/liquid-tabbar */
+/*! liquid-tabbar v2.7.5 | MIT | https://github.com/mailoswang/liquid-tabbar */
 
 /* ==========================================================================
    1. 可調整的變數（覆寫 .ltb 上的變數即可）
@@ -71,12 +71,12 @@
 .ltb, .ltb * { box-sizing: border-box }
 
 .ltb {
-  position: fixed; left: 50%; translate: -50% 0; bottom: var(--ltb-bottom); z-index: var(--ltb-z);
-  /* 有左邊圓鈕時分頁列讓出「圓鈕直徑 + 間距」：--ltb-sp（0–1，圓鈕出現的程度）由 JS 每幀寫入，
-     寬度與 margin 都從它算，兩者一定同步、右緣不動（不靠 CSS 過渡：部分 iOS Safari 兩者不同步，整組會偏一邊） */
+  /* 置中用右緣定位（右緣 = 視窗中央 + 整組寬度的一半），不用 translate: -50%：
+     部分 iOS Safari 在寬度變化時不會每幀重算 -50%，圓鈕出現／收起時整組會先偏一邊再跳回 */
+  position: fixed; right: calc(50% - var(--ltb-width) / 2); bottom: var(--ltb-bottom); z-index: var(--ltb-z);
+  /* 有左邊圓鈕時分頁列從左邊讓出「圓鈕直徑 + 間距」（右緣不動）：--ltb-sp（0–1，圓鈕出現的程度）由 JS 每幀寫入 */
   --ltb-sx: calc((var(--ltb-height) + var(--ltb-side-gap)) * var(--ltb-sp, 0));
   width: calc(var(--ltb-gw, var(--ltb-width)) - var(--ltb-sx)); height: var(--ltb-height); padding: var(--ltb-pad-y) var(--ltb-pad-x);
-  margin-left: calc(var(--ltb-sx) / 2);
   display: grid; grid-template-columns: repeat(var(--ltb-n, 4), 1fr); isolation: isolate;
   border: 0; border-radius: 999px;
   box-shadow: var(--ltb-shadow);
